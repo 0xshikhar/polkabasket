@@ -1,5 +1,6 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
+import { useSubWallet, truncateAddress } from "../hooks/useSubWallet";
 
 export function Navbar() {
   const location = useLocation();
@@ -43,8 +44,7 @@ export function Navbar() {
           </div>
 
           <div className="flex items-center gap-2 sm:gap-3">
-            <NetworkSelector />
-            <WalletButton />
+            <SubWalletButton />
             <button
               type="button"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -88,73 +88,74 @@ export function Navbar() {
   );
 }
 
-function NetworkSelector() {
-  const [open, setOpen] = useState(false);
-  const [selected, setSelected] = useState("Westend");
+function SubWalletButton() {
+  const { isAvailable, account, error, loading, connect, disconnect } = useSubWallet();
+  const [showDropdown, setShowDropdown] = useState(false);
 
-  const networks = ["Westend", "Polkadot Hub"];
+  if (account) {
+    return (
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => setShowDropdown((v) => !v)}
+          className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+        >
+          <span className="h-2 w-2 rounded-full bg-neutral-400" />
+          {truncateAddress(account.address)}
+        </button>
+        {showDropdown && (
+          <>
+            <div className="fixed inset-0 z-40" aria-hidden onClick={() => setShowDropdown(false)} />
+            <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-white/10 bg-neutral-900 py-2 shadow-xl">
+              <div className="border-b border-white/10 px-4 py-2">
+                <p className="text-xs text-neutral-500">Connected with SubWallet</p>
+                <p className="mt-1 truncate font-mono text-sm text-white">{account.address}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  disconnect();
+                  setShowDropdown(false);
+                }}
+                className="w-full px-4 py-2.5 text-left text-sm text-neutral-400 transition hover:bg-white/5 hover:text-white"
+              >
+                Disconnect
+              </button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
+
+  if (!isAvailable) {
+    return (
+      <a
+        href="https://subwallet.app/download.html"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
+      >
+        Install SubWallet
+      </a>
+    );
+  }
 
   return (
     <div className="relative">
       <button
         type="button"
-        onClick={() => setOpen(!open)}
-        className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-2 text-sm text-white transition hover:bg-white/10"
+        onClick={() => connect()}
+        disabled={loading}
+        className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
       >
-        <span className="h-2 w-2 rounded-full bg-neutral-400" />
-        <span>{selected}</span>
-        <svg className="h-4 w-4 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        {loading ? "Connecting…" : "Connect SubWallet"}
       </button>
-
-      {open && (
-        <>
-          <div className="fixed inset-0 z-40" aria-hidden onClick={() => setOpen(false)} />
-          <div className="absolute right-0 z-50 mt-2 w-44 rounded-xl border border-white/10 bg-neutral-900 py-1 shadow-xl">
-            {networks.map((name) => (
-              <button
-                key={name}
-                type="button"
-                onClick={() => {
-                  setSelected(name);
-                  setOpen(false);
-                }}
-                className="flex w-full items-center gap-2 px-4 py-2.5 text-left text-sm text-neutral-400 transition hover:bg-white/5 hover:text-white"
-              >
-                <span className="h-2 w-2 rounded-full bg-neutral-400" />
-                {name}
-              </button>
-            ))}
-          </div>
-        </>
+      {error && (
+        <p className="absolute right-0 top-full mt-1 max-w-[200px] text-right text-xs text-red-400">
+          {error}
+        </p>
       )}
     </div>
-  );
-}
-
-function WalletButton() {
-  const [connected, setConnected] = useState(false);
-
-  if (connected) {
-    return (
-      <button
-        type="button"
-        className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
-      >
-        <span className="h-2 w-2 rounded-full bg-neutral-400" />
-        0x1234...5678
-      </button>
-    );
-  }
-
-  return (
-    <button
-      type="button"
-      onClick={() => setConnected(true)}
-      className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
-    >
-      Connect Wallet
-    </button>
   );
 }

@@ -115,32 +115,28 @@ export function HomePage() {
         </div>
       </section>
 
-      {/* How it works — headline block */}
+      {/* How it works — one section: headline + steps */}
       <section
         id="how"
-        className={`relative min-h-[50vh] w-full overflow-hidden ${SECTION_PADDING}`}
+        className={`relative overflow-hidden ${SECTION_PADDING}`}
       >
-        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_0%,rgba(163,163,163,0.06),transparent_60%)]" />
-        <div className={`relative z-10 flex min-h-[45vh] flex-col items-center justify-center text-center ${CONTENT_MAX}`}>
-          <p className="text-sm font-medium uppercase tracking-[0.18em] text-neutral-500">
-            How it works
-          </p>
-          <h2 className="mt-4 max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
-            From deposit to yield
-            <br />
-            across chains
-          </h2>
-          <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-400 sm:text-lg md:text-xl">
-            One deposit, one basket token. XCM handles the rest—your DOT is allocated across Hydration, Moonbeam, Acala and more.
-          </p>
-        </div>
-      </section>
-
-      {/* Feature steps — cards with structure */}
-      <section className={`relative overflow-hidden ${SECTION_PADDING}`}>
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(38,38,38,0.8),transparent_70%)]" />
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_70%_50%_at_50%_0%,rgba(163,163,163,0.06),transparent_60%)]" />
         <div className={`relative z-10 ${CONTENT_MAX}`}>
-          <div className="grid gap-6 sm:grid-cols-3 sm:gap-8">
+          <div className="flex flex-col items-center text-center">
+            <p className="text-sm font-medium uppercase tracking-[0.18em] text-neutral-500">
+              How it works
+            </p>
+            <h2 className="mt-4 max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
+              From deposit to yield
+              <br />
+              across chains
+            </h2>
+            <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-400 sm:text-lg md:text-xl">
+              One deposit, one basket token. XCM handles the rest—your DOT is allocated across Hydration, Moonbeam, Acala and more.
+            </p>
+          </div>
+
+          <div className="mt-16 grid gap-6 sm:grid-cols-3 sm:gap-8 lg:mt-20">
             {[
               {
                 step: "1",
