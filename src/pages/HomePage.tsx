@@ -1,250 +1,213 @@
-import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { useBasketManager, Basket } from "../hooks/useBasketManager";
-import { formatEther } from "viem";
+import PixelBlast from "../components/PixelBlast";
 
-interface BasketPreview {
-  id: bigint;
-  name: string;
-  symbol: string;
-  totalDeposited: bigint;
-  active: boolean;
-  allocations: Array<{
-    chain: string;
-    weight: number;
-  }>;
-}
+const SECTION_PADDING = "px-4 py-16 sm:px-6 sm:py-20 md:px-10 md:py-24 lg:py-28";
+const CONTENT_MAX = "mx-auto max-w-7xl";
 
-const MOCK_BASKETS: BasketPreview[] = [
-  {
-    id: 0n,
-    name: "xDOT Liquidity Basket",
-    symbol: "xDOT-LIQ",
-    totalDeposited: 1250000n,
-    active: true,
-    allocations: [
-      { chain: "Hydration LP", weight: 40 },
-      { chain: "Moonbeam Lending", weight: 30 },
-      { chain: "Acala Staking", weight: 30 },
-    ],
-  },
-  {
-    id: 1n,
-    name: "Stable Yield Basket",
-    symbol: "xSTABLE",
-    totalDeposited: 850000n,
-    active: true,
-    allocations: [
-      { chain: "Hydration Stable", weight: 50 },
-      { chain: "Moonbeam Liquid Staking", weight: 50 },
-    ],
-  },
-  {
-    id: 2n,
-    name: "High Risk Basket",
-    symbol: "xRISK",
-    totalDeposited: 320000n,
-    active: false,
-    allocations: [
-      { chain: "Moonbeam Leverage", weight: 60 },
-      { chain: "Acala Leverage", weight: 40 },
-    ],
-  },
-];
+const SILVER = "#A3A3A3";
 
 export function HomePage() {
-  const { getBasket, getBasketNAV } = useBasketManager();
-  const [baskets, setBaskets] = useState<BasketPreview[]>(MOCK_BASKETS);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const loadBaskets = async () => {
-      setLoading(false);
-    };
-    loadBaskets();
-  }, []);
-
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="container mx-auto px-4 py-8">
-        <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-white mb-4">
-            TeleBasket
-          </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Cross-chain DeFi baskets. One deposit, multiple chains, 
-            one unified token representing your diversified portfolio.
-          </p>
+    <div className="min-h-screen bg-neutral-950">
+      {/* Hero */}
+      <section
+        className={`relative min-h-[92vh] w-full overflow-hidden sm:min-h-[95vh] ${SECTION_PADDING}`}
+        style={{ paddingTop: "calc(5rem + 2vh)" }}
+      >
+        {/* PixelBlast background — silver dither */}
+        <div className="absolute inset-0 z-0">
+          <PixelBlast
+            variant="square"
+            pixelSize={4}
+            color={SILVER}
+            patternScale={2}
+            patternDensity={1}
+            pixelSizeJitter={0}
+            enableRipples
+            rippleSpeed={0.4}
+            rippleThickness={0.12}
+            rippleIntensityScale={1.5}
+            liquid={false}
+            liquidStrength={0.12}
+            liquidRadius={1.2}
+            liquidWobbleSpeed={5}
+            speed={0.5}
+            edgeFade={0.25}
+            transparent
+          />
+        </div>
+        {/* Gradient + grid overlay */}
+        <div
+          className="pointer-events-none absolute inset-0 z-[1]"
+          aria-hidden
+        >
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_50%_at_50%_-15%,rgba(163,163,163,0.08),transparent_50%)]" />
+          <div
+            className="absolute inset-0 opacity-[0.02]"
+            style={{
+              backgroundImage: `linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)`,
+              backgroundSize: "64px 64px",
+            }}
+          />
         </div>
 
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-2xl font-bold text-white">Available Baskets</h2>
-            <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors">
-              Create Basket
-            </button>
+        <div className={`relative z-10 flex min-h-[85vh] flex-col items-center justify-center text-center ${CONTENT_MAX}`}>
+          <p className="landing-section landing-stagger-1 text-sm font-medium uppercase tracking-[0.2em] text-neutral-500">
+            Cross-chain DeFi
+          </p>
+          <h1 className="landing-section landing-stagger-2 mt-4 max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl">
+            Baskets in one click
+          </h1>
+          <p className="landing-section landing-stagger-3 mt-5 max-w-xl text-base leading-relaxed text-neutral-400 sm:mt-6 sm:text-lg md:text-xl">
+            Deposit DOT once. Get automatic allocation across parachains via XCM. One unified basket token—yield from multiple chains.
+          </p>
+          <div className="landing-section landing-stagger-4 mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
+            <Link
+              to="/baskets"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full bg-white px-8 py-3.5 text-sm font-medium text-neutral-950 no-underline transition hover:bg-neutral-200 focus:outline-none focus:ring-2 focus:ring-white/30"
+            >
+              Browse Baskets
+            </Link>
+            <a
+              href="#how"
+              className="inline-flex min-h-[48px] items-center justify-center rounded-full border border-white/25 px-8 py-3.5 text-sm font-medium text-white no-underline transition hover:border-white/40 hover:bg-white/5 focus:outline-none focus:ring-2 focus:ring-white/20"
+            >
+              How it works
+            </a>
           </div>
+        </div>
+      </section>
 
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500"></div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {baskets.map((basket) => (
-                <BasketCard key={basket.id.toString()} basket={basket} />
+      {/* Stats — structured card */}
+      <section className={`relative overflow-hidden bg-black ${SECTION_PADDING}`}>
+        <div
+          className="absolute inset-0 opacity-[0.02]"
+          style={{
+            backgroundImage: `linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px)`,
+            backgroundSize: "48px 48px",
+          }}
+        />
+        <div className={`relative z-10 ${CONTENT_MAX}`}>
+          <div className="rounded-2xl border border-white/[0.06] bg-white/[0.02] p-8 sm:p-10 md:p-12">
+            <div className="grid grid-cols-2 gap-8 sm:grid-cols-4 sm:gap-0">
+              {[
+                { value: "$2.42M", label: "TVL" },
+                { value: "3", label: "Baskets" },
+                { value: "1,247", label: "Depositors" },
+                { value: "12%+", label: "Avg. APY" },
+              ].map((stat) => (
+                <div
+                  key={stat.label}
+                  className={`flex flex-col items-center text-center sm:border-e sm:border-white/10 last:sm:border-e-0 sm:px-6`}
+                >
+                  <p className="bg-gradient-to-br from-white to-neutral-400 bg-clip-text text-4xl font-extrabold tracking-tight text-transparent sm:text-5xl md:text-6xl">
+                    {stat.value}
+                  </p>
+                  <p className="mt-2 text-xs font-medium uppercase tracking-widest text-neutral-500">
+                    {stat.label}
+                  </p>
+                </div>
               ))}
             </div>
-          )}
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          <StatCard
-            title="Total Value Locked"
-            value="$2.42M"
-            change="+12.5%"
-            positive
-          />
-          <StatCard
-            title="Active Baskets"
-            value="2"
-            change=""
-            positive
-          />
-          <StatCard
-            title="Total Depositors"
-            value="1,247"
-            change="+89"
-            positive
-          />
-        </div>
-
-        <div className="mt-16 bg-gray-800/50 rounded-2xl p-8 border border-gray-700">
-          <h3 className="text-2xl font-bold text-white mb-4">How It Works</h3>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            <StepCard
-              number="1"
-              title="Deposit DOT"
-              description="Deposit your DOT into any basket. You receive basket tokens representing your share."
-            />
-            <StepCard
-              number="2"
-              title="Automatic Allocation"
-              description="Your capital is automatically deployed across multiple parachains via XCM."
-            />
-            <StepCard
-              number="3"
-              title="Earn Yield"
-              description="Earn yield from multiple DeFi protocols. Rebalance anytime for optimal returns."
-            />
           </div>
         </div>
-      </div>
-    </div>
-  );
-}
+      </section>
 
-function BasketCard({ basket }: { basket: BasketPreview }) {
-  const chainColors: Record<string, string> = {
-    "Hydration LP": "#E6007A",
-    "Hydration Stable": "#E6007A",
-    "Moonbeam Lending": "#53CBC9",
-    "Moonbeam Liquid Staking": "#53CBC9",
-    "Moonbeam Leverage": "#53CBC9",
-    "Acala Staking": "#FF4B4B",
-    "Acala Leverage": "#FF4B4B",
-  };
-
-  return (
-    <Link to={`/basket/${basket.id}`}>
-      <div className="bg-gray-800 rounded-xl p-6 border border-gray-700 hover:border-blue-500 transition-all hover:shadow-xl hover:shadow-blue-500/10 group">
-        <div className="flex justify-between items-start mb-4">
-          <div>
-            <h3 className="text-xl font-bold text-white group-hover:text-blue-400 transition-colors">
-              {basket.name}
-            </h3>
-            <p className="text-gray-400">{basket.symbol}</p>
-          </div>
-          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-            basket.active 
-              ? "bg-green-500/20 text-green-400" 
-              : "bg-red-500/20 text-red-400"
-          }`}>
-            {basket.active ? "Active" : "Inactive"}
-          </span>
-        </div>
-
-        <div className="mb-4">
-          <p className="text-2xl font-bold text-white">
-            {Number(formatEther(basket.totalDeposited)).toLocaleString()} DOT
+      {/* How it works — headline block */}
+      <section
+        id="how"
+        className={`relative min-h-[50vh] w-full overflow-hidden ${SECTION_PADDING}`}
+      >
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_70%_40%_at_50%_0%,rgba(163,163,163,0.06),transparent_60%)]" />
+        <div className={`relative z-10 flex min-h-[45vh] flex-col items-center justify-center text-center ${CONTENT_MAX}`}>
+          <p className="text-sm font-medium uppercase tracking-[0.18em] text-neutral-500">
+            How it works
           </p>
-          <p className="text-sm text-gray-400">TVL</p>
+          <h2 className="mt-4 max-w-4xl text-3xl font-semibold tracking-tight text-white sm:text-4xl md:text-5xl lg:text-6xl">
+            From deposit to yield
+            <br />
+            across chains
+          </h2>
+          <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-400 sm:text-lg md:text-xl">
+            One deposit, one basket token. XCM handles the rest—your DOT is allocated across Hydration, Moonbeam, Acala and more.
+          </p>
         </div>
+      </section>
 
-        <div className="space-y-2">
-          <p className="text-sm text-gray-400">Allocation</p>
-          <div className="flex h-2 rounded-full overflow-hidden">
-            {basket.allocations.map((alloc, i) => (
-              <div
-                key={i}
-                className="h-full"
-                style={{
-                  width: `${alloc.weight}%`,
-                  backgroundColor: chainColors[alloc.chain] || "#6366f1",
-                }}
-              />
+      {/* Feature steps — cards with structure */}
+      <section className={`relative overflow-hidden ${SECTION_PADDING}`}>
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_100%,rgba(38,38,38,0.8),transparent_70%)]" />
+        <div className={`relative z-10 ${CONTENT_MAX}`}>
+          <div className="grid gap-6 sm:grid-cols-3 sm:gap-8">
+            {[
+              {
+                step: "1",
+                title: "Deposit DOT",
+                description:
+                  "Deposit your DOT into any basket. You receive basket tokens representing your share of the portfolio.",
+                icon: (
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                ),
+              },
+              {
+                step: "2",
+                title: "XCM Allocation",
+                description:
+                  "Your capital is automatically sent across parachains via XCM according to the basket's allocation.",
+                icon: (
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                  </svg>
+                ),
+              },
+              {
+                step: "3",
+                title: "Earn Yield",
+                description:
+                  "Earn yield from multiple DeFi protocols. Rebalance anytime. One token, multiple chains.",
+                icon: (
+                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                ),
+              },
+            ].map((item) => (
+              <article
+                key={item.step}
+                className="group relative flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.03] p-8 transition duration-300 hover:border-white/[0.1] hover:bg-white/[0.05]"
+              >
+                <div className="flex items-start justify-between">
+                  <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-white transition group-hover:border-white/15 group-hover:bg-white/10">
+                    {item.icon}
+                  </span>
+                  <span className="text-2xl font-bold tabular-nums text-white/20">
+                    {item.step}
+                  </span>
+                </div>
+                <h3 className="mt-6 text-xl font-semibold text-white">
+                  {item.title}
+                </h3>
+                <p className="mt-3 text-sm leading-relaxed text-neutral-400">
+                  {item.description}
+                </p>
+              </article>
             ))}
           </div>
-          <div className="flex flex-wrap gap-2 mt-2">
-            {basket.allocations.map((alloc, i) => (
-              <span key={i} className="text-xs text-gray-400">
-                <span 
-                  className="inline-block w-2 h-2 rounded-full mr-1"
-                  style={{ backgroundColor: chainColors[alloc.chain] || "#6366f1" }}
-                />
-                {alloc.chain} {alloc.weight}%
-              </span>
-            ))}
-          </div>
         </div>
-      </div>
-    </Link>
-  );
-}
+      </section>
 
-function StatCard({ title, value, change, positive }: { 
-  title: string; 
-  value: string; 
-  change: string;
-  positive: boolean;
-}) {
-  return (
-    <div className="bg-gray-800/50 rounded-xl p-6 border border-gray-700">
-      <p className="text-gray-400 text-sm mb-1">{title}</p>
-      <div className="flex items-baseline gap-2">
-        <p className="text-3xl font-bold text-white">{value}</p>
-        {change && (
-          <span className={`text-sm ${positive ? "text-green-400" : "text-red-400"}`}>
-            {change}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
-
-function StepCard({ number, title, description }: { 
-  number: string; 
-  title: string; 
-  description: string;
-}) {
-  return (
-    <div className="text-center">
-      <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4">
-        <span className="text-xl font-bold text-white">{number}</span>
-      </div>
-      <h4 className="text-lg font-semibold text-white mb-2">{title}</h4>
-      <p className="text-gray-400">{description}</p>
+      {/* Thin footer — landing only */}
+      <footer className="border-t border-white/[0.06] py-6">
+        <div className={`${CONTENT_MAX} px-4 sm:px-6 md:px-10`}>
+          <p className="text-center text-xs text-neutral-500">
+            © {new Date().getFullYear()} TeleBasket · Cross-chain DeFi on Polkadot
+          </p>
+        </div>
+      </footer>
     </div>
   );
 }

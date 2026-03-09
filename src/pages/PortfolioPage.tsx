@@ -32,47 +32,47 @@ export function PortfolioPage() {
   const totalPnL = positions.reduce((acc, p) => acc + parseFloat(p.pnl), 0);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-neutral-950 pt-20">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-10">
         <div className="flex justify-between items-center mb-8">
           <div>
             <h1 className="text-3xl font-bold text-white">Portfolio</h1>
-            <p className="text-gray-400">Track your basket positions</p>
+            <p className="text-neutral-400">Track your basket positions</p>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-gradient-to-br from-blue-900 to-gray-800 rounded-2xl p-6 border border-blue-700/50">
-            <p className="text-gray-400 text-sm">Total Value</p>
+        <div className="grid grid-cols-1 gap-6 mb-8 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/50 to-neutral-900 p-6">
+            <p className="text-neutral-400 text-sm">Total Value</p>
             <p className="text-3xl font-bold text-white">${totalValue.toFixed(2)}</p>
           </div>
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm">Total P&L</p>
-            <p className={`text-3xl font-bold ${totalPnL >= 0 ? "text-green-400" : "text-red-400"}`}>
+          <div className="rounded-3xl border border-white/10 bg-neutral-900 p-6">
+            <p className="text-neutral-400 text-sm">Total P&L</p>
+            <p className={`text-3xl font-bold ${totalPnL >= 0 ? "text-emerald-400" : "text-red-400"}`}>
               {totalPnL >= 0 ? "+" : ""}{totalPnL.toFixed(2)}
             </p>
           </div>
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm">Positions</p>
+          <div className="rounded-3xl border border-white/10 bg-neutral-900 p-6">
+            <p className="text-neutral-400 text-sm">Positions</p>
             <p className="text-3xl font-bold text-white">{positions.length}</p>
           </div>
-          <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-            <p className="text-gray-400 text-sm">Avg. APY</p>
-            <p className="text-3xl font-bold text-blue-400">12.4%</p>
+          <div className="rounded-3xl border border-white/10 bg-neutral-900 p-6">
+            <p className="text-neutral-400 text-sm">Avg. APY</p>
+            <p className="text-3xl font-bold text-emerald-400">12.4%</p>
           </div>
         </div>
 
-        <div className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
-          <div className="p-4 border-b border-gray-700 flex justify-between items-center">
+        <div className="overflow-hidden rounded-3xl border border-white/10 bg-neutral-900">
+          <div className="flex justify-between items-center border-b border-white/10 p-4 sm:p-6">
             <h2 className="text-xl font-bold text-white">Your Positions</h2>
           </div>
-          
+
           {positions.length === 0 ? (
             <div className="p-12 text-center">
-              <p className="text-gray-400 mb-4">You don't have any positions yet.</p>
-              <Link 
-                to="/"
-                className="inline-block px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+              <p className="text-neutral-400 mb-4">You don't have any positions yet.</p>
+              <Link
+                to="/baskets"
+                className="inline-block rounded-full bg-white px-6 py-3 font-medium text-neutral-950 no-underline transition hover:bg-neutral-200"
               >
                 Browse Baskets
               </Link>
@@ -80,43 +80,37 @@ export function PortfolioPage() {
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-700/50">
+                <thead className="bg-white/5">
                   <tr>
-                    <th className="text-left text-gray-400 font-medium px-6 py-4">Basket</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">Deposited</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">Tokens</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">Value</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">P&L</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">Actions</th>
+                    <th className="px-6 py-4 text-left font-medium text-neutral-400">Basket</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">Deposited</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">Tokens</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">Value</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">P&L</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {positions.map((position) => (
-                    <tr key={position.id.toString()} className="border-t border-gray-700 hover:bg-gray-700/30">
+                    <tr key={position.id.toString()} className="border-t border-white/5 transition hover:bg-white/5">
                       <td className="px-6 py-4">
                         <div>
-                          <p className="text-white font-medium">{position.name}</p>
-                          <p className="text-gray-400 text-sm">{position.symbol}</p>
+                          <p className="font-medium text-white">{position.name}</p>
+                          <p className="text-sm text-neutral-400">{position.symbol}</p>
                         </div>
                       </td>
-                      <td className="text-right px-6 py-4 text-white">
-                        {position.deposited} DOT
-                      </td>
-                      <td className="text-right px-6 py-4 text-white">
-                        {position.tokens}
-                      </td>
-                      <td className="text-right px-6 py-4 text-white font-medium">
-                        ${position.value}
-                      </td>
-                      <td className="text-right px-6 py-4">
-                        <span className={parseFloat(position.pnl) >= 0 ? "text-green-400" : "text-red-400"}>
+                      <td className="px-6 py-4 text-right text-white">{position.deposited} DOT</td>
+                      <td className="px-6 py-4 text-right text-white">{position.tokens}</td>
+                      <td className="px-6 py-4 text-right font-medium text-white">${position.value}</td>
+                      <td className="px-6 py-4 text-right">
+                        <span className={parseFloat(position.pnl) >= 0 ? "text-emerald-400" : "text-red-400"}>
                           {position.pnl} ({position.pnlPercent})
                         </span>
                       </td>
-                      <td className="text-right px-6 py-4">
+                      <td className="px-6 py-4 text-right">
                         <Link
                           to={`/basket/${position.id}`}
-                          className="text-blue-400 hover:text-blue-300 transition-colors"
+                          className="text-emerald-400 no-underline transition hover:text-emerald-300"
                         >
                           Manage →
                         </Link>
@@ -129,18 +123,18 @@ export function PortfolioPage() {
           )}
         </div>
 
-        <div className="mt-8">
+        <div className="mt-10">
           <h2 className="text-xl font-bold text-white mb-4">Transaction History</h2>
-          <div className="bg-gray-800 rounded-2xl border border-gray-700 overflow-hidden">
+          <div className="overflow-hidden rounded-3xl border border-white/10 bg-neutral-900">
             <div className="overflow-x-auto">
               <table className="w-full">
-                <thead className="bg-gray-700/50">
+                <thead className="bg-white/5">
                   <tr>
-                    <th className="text-left text-gray-400 font-medium px-6 py-4">Type</th>
-                    <th className="text-left text-gray-400 font-medium px-6 py-4">Basket</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">Amount</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">Status</th>
-                    <th className="text-right text-gray-400 font-medium px-6 py-4">Time</th>
+                    <th className="px-6 py-4 text-left font-medium text-neutral-400">Type</th>
+                    <th className="px-6 py-4 text-left font-medium text-neutral-400">Basket</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">Amount</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">Status</th>
+                    <th className="px-6 py-4 text-right font-medium text-neutral-400">Time</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -149,22 +143,26 @@ export function PortfolioPage() {
                     { type: "Deposit", basket: "xDOT-LIQ", amount: "50.00 DOT", status: "Confirmed", time: "1 day ago" },
                     { type: "Rebalance", basket: "xDOT-LIQ", amount: "-", status: "Confirmed", time: "3 days ago" },
                   ].map((tx, i) => (
-                    <tr key={i} className="border-t border-gray-700">
+                    <tr key={i} className="border-t border-white/5">
                       <td className="px-6 py-4">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${
-                          tx.type === "Deposit" ? "bg-green-500/20 text-green-400" :
-                          tx.type === "Withdraw" ? "bg-red-500/20 text-red-400" :
-                          "bg-blue-500/20 text-blue-400"
-                        }`}>
+                        <span
+                          className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                            tx.type === "Deposit"
+                              ? "bg-emerald-500/20 text-emerald-400"
+                              : tx.type === "Withdraw"
+                                ? "bg-red-500/20 text-red-400"
+                                : "bg-amber-500/20 text-amber-400"
+                          }`}
+                        >
                           {tx.type}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-white">{tx.basket}</td>
-                      <td className="text-right px-6 py-4 text-white">{tx.amount}</td>
-                      <td className="text-right px-6 py-4">
-                        <span className="text-green-400">✓ {tx.status}</span>
+                      <td className="px-6 py-4 text-right text-white">{tx.amount}</td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-emerald-400">✓ {tx.status}</span>
                       </td>
-                      <td className="text-right px-6 py-4 text-gray-400">{tx.time}</td>
+                      <td className="px-6 py-4 text-right text-neutral-400">{tx.time}</td>
                     </tr>
                   ))}
                 </tbody>

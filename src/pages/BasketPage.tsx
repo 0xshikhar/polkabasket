@@ -72,19 +72,19 @@ export function BasketPage() {
   }, [id]);
 
   const riskColors = {
-    Low: "bg-green-500/20 text-green-400",
-    Medium: "bg-yellow-500/20 text-yellow-400",
+    Low: "bg-emerald-500/20 text-emerald-400",
+    Medium: "bg-amber-500/20 text-amber-400",
     High: "bg-red-500/20 text-red-400",
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-neutral-950 pt-20">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 md:px-10">
         <Link 
-          to="/" 
-          className="inline-flex items-center text-gray-400 hover:text-white mb-6 transition-colors"
+          to="/baskets" 
+          className="mb-6 inline-flex items-center gap-2 text-neutral-400 no-underline transition hover:text-white"
         >
-          <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg className="h-5 w-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
           </svg>
           Back to Baskets
@@ -92,11 +92,11 @@ export function BasketPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2 space-y-6">
-            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+            <div className="rounded-3xl border border-white/10 bg-neutral-900 p-6 sm:p-8">
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h1 className="text-3xl font-bold text-white mb-1">{basketData.name}</h1>
-                  <p className="text-gray-400">{basketData.symbol}</p>
+                  <p className="text-neutral-400">{basketData.symbol}</p>
                 </div>
                 <div className="flex gap-2">
                   <span className={`px-3 py-1 rounded-full text-sm font-medium ${riskColors[basketData.risk]}`}>
@@ -105,19 +105,19 @@ export function BasketPage() {
                 </div>
               </div>
 
-              <p className="text-gray-300 mb-6">{basketData.description}</p>
+              <p className="text-neutral-300 mb-6">{basketData.description}</p>
 
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm">APY</p>
-                  <p className="text-2xl font-bold text-green-400">{basketData.apy}</p>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+                  <p className="text-neutral-400 text-sm">APY</p>
+                  <p className="text-2xl font-bold text-emerald-400">{basketData.apy}</p>
                 </div>
-                <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm">TVL</p>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+                  <p className="text-neutral-400 text-sm">TVL</p>
                   <p className="text-2xl font-bold text-white">$1.25M</p>
                 </div>
-                <div className="bg-gray-700/50 rounded-lg p-4">
-                  <p className="text-gray-400 text-sm">Token Price</p>
+                <div className="rounded-xl border border-white/5 bg-white/5 p-4">
+                  <p className="text-neutral-400 text-sm">Token Price</p>
                   <p className="text-2xl font-bold text-white">1.02 DOT</p>
                 </div>
               </div>
@@ -128,14 +128,14 @@ export function BasketPage() {
               </div>
             </div>
 
-            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
-              <div className="flex border-b border-gray-700 mb-6">
+            <div className="rounded-3xl border border-white/10 bg-neutral-900 p-6 sm:p-8">
+              <div className="flex border-b border-white/10 mb-6">
                 <button
                   onClick={() => setActiveTab("deposit")}
                   className={`px-6 py-3 font-medium transition-colors ${
                     activeTab === "deposit"
-                      ? "text-blue-400 border-b-2 border-blue-400"
-                      : "text-gray-400 hover:text-white"
+                      ? "text-emerald-400 border-b-2 border-emerald-400"
+                      : "text-neutral-400 hover:text-white"
                   }`}
                 >
                   Deposit
@@ -144,8 +144,8 @@ export function BasketPage() {
                   onClick={() => setActiveTab("withdraw")}
                   className={`px-6 py-3 font-medium transition-colors ${
                     activeTab === "withdraw"
-                      ? "text-blue-400 border-b-2 border-blue-400"
-                      : "text-gray-400 hover:text-white"
+                      ? "text-emerald-400 border-b-2 border-emerald-400"
+                      : "text-neutral-400 hover:text-white"
                   }`}
                 >
                   Withdraw
@@ -178,23 +178,23 @@ export function BasketPage() {
 
             <XCMStatusCard />
 
-            <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+            <div className="rounded-3xl border border-white/10 bg-neutral-900 p-6">
               <h3 className="text-lg font-bold text-white mb-4">Basket Info</h3>
               <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Chain</span>
+                  <span className="text-neutral-400">Chain</span>
                   <span className="text-white">Polkadot Hub</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Protocol</span>
+                  <span className="text-neutral-400">Protocol</span>
                   <span className="text-white">PolkaVM</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Token</span>
+                  <span className="text-neutral-400">Token</span>
                   <span className="text-white">{basketData.symbol}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-gray-400">Min Deposit</span>
+                  <span className="text-neutral-400">Min Deposit</span>
                   <span className="text-white">1 DOT</span>
                 </div>
               </div>
@@ -239,11 +239,11 @@ function AllocationChart({ allocations }: { allocations: Allocation[] }) {
             key={i}
             d={describeArc(arc.startAngle, arc.endAngle)}
             fill={arc.color}
-            stroke="#1f2937"
+            stroke="rgb(38 38 38)"
             strokeWidth="0.5"
           />
         ))}
-        <circle cx="50" cy="50" r="20" fill="#1f2937" />
+        <circle cx="50" cy="50" r="20" fill="rgb(38 38 38)" />
       </svg>
       <div className="flex-1 space-y-2">
         {allocations.map((alloc, i) => (
@@ -253,7 +253,7 @@ function AllocationChart({ allocations }: { allocations: Allocation[] }) {
                 className="w-3 h-3 rounded-full mr-2" 
                 style={{ backgroundColor: alloc.color }}
               />
-              <span className="text-gray-300">{alloc.chain}</span>
+              <span className="text-neutral-300">{alloc.chain}</span>
             </div>
             <span className="text-white font-medium">{alloc.weight}%</span>
           </div>
@@ -292,18 +292,19 @@ function DepositForm({
   return (
     <div>
       <div className="mb-4">
-        <label className="block text-gray-400 text-sm mb-2">Amount (DOT)</label>
+        <label className="block text-neutral-400 text-sm mb-2">Amount (DOT)</label>
         <div className="flex gap-2">
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           />
           <button
+            type="button"
             onClick={handleMax}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white transition hover:bg-white/10"
           >
             MAX
           </button>
@@ -311,12 +312,12 @@ function DepositForm({
       </div>
 
       {amount && parseFloat(amount) > 0 && (
-        <div className="bg-gray-700/50 rounded-lg p-4 mb-4">
-          <p className="text-gray-400 text-sm mb-3">Your deposit will be allocated to:</p>
+        <div className="rounded-xl border border-white/5 bg-white/5 p-4 mb-4">
+          <p className="text-neutral-400 text-sm mb-3">Your deposit will be allocated to:</p>
           <div className="space-y-2">
             {allocations.map((alloc, i) => (
               <div key={i} className="flex justify-between text-sm">
-                <span className="text-gray-300">{alloc.chain}</span>
+                <span className="text-neutral-300">{alloc.chain}</span>
                 <span className="text-white">
                   {((parseFloat(amount) * alloc.weight) / 100).toFixed(4)} DOT
                 </span>
@@ -327,9 +328,10 @@ function DepositForm({
       )}
 
       <button
+        type="button"
         onClick={handleDeposit}
         disabled={isLoading || !amount || parseFloat(amount) <= 0}
-        className="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+        className="w-full rounded-xl py-4 bg-emerald-600 font-semibold text-white transition hover:bg-emerald-500 disabled:bg-neutral-700 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <span className="flex items-center justify-center">
@@ -376,38 +378,40 @@ function WithdrawForm({
   return (
     <div>
       <div className="mb-4">
-        <label className="block text-gray-400 text-sm mb-2">Amount (Token)</label>
+        <label className="block text-neutral-400 text-sm mb-2">Amount (Token)</label>
         <div className="flex gap-2">
           <input
             type="number"
             value={amount}
             onChange={(e) => setAmount(e.target.value)}
             placeholder="0.00"
-            className="flex-1 bg-gray-700 border border-gray-600 rounded-lg px-4 py-3 text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
           />
           <button
+            type="button"
             onClick={handleMax}
-            className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-500 transition-colors"
+            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white transition hover:bg-white/10"
           >
             MAX
           </button>
         </div>
-        <p className="text-gray-500 text-sm mt-2">
+        <p className="text-neutral-500 text-sm mt-2">
           Available: {userBalance || "50.00"} xDOT-LIQ
         </p>
       </div>
 
       {amount && parseFloat(amount) > 0 && (
-        <div className="bg-gray-700/50 rounded-lg p-4 mb-4">
-          <p className="text-gray-400 text-sm mb-2">You will receive:</p>
+        <div className="rounded-xl border border-white/5 bg-white/5 p-4 mb-4">
+          <p className="text-neutral-400 text-sm mb-2">You will receive:</p>
           <p className="text-2xl font-bold text-white">{amount} DOT</p>
         </div>
       )}
 
       <button
+        type="button"
         onClick={handleWithdraw}
         disabled={isLoading || !amount || parseFloat(amount) <= 0}
-        className="w-full py-4 bg-red-600 hover:bg-red-700 disabled:bg-gray-600 disabled:cursor-not-allowed text-white rounded-lg font-semibold transition-colors"
+        className="w-full rounded-xl py-4 bg-red-600 font-semibold text-white transition hover:bg-red-500 disabled:bg-neutral-700 disabled:cursor-not-allowed"
       >
         {isLoading ? "Withdrawing..." : "Withdraw DOT"}
       </button>
@@ -417,20 +421,20 @@ function WithdrawForm({
 
 function UserPositionCard({ userDeposit, tokenSymbol }: { userDeposit: string; tokenSymbol: string }) {
   return (
-    <div className="bg-gradient-to-br from-blue-900 to-gray-800 rounded-2xl p-6 border border-blue-700/50">
+    <div className="rounded-3xl border border-emerald-500/20 bg-gradient-to-br from-emerald-950/50 to-neutral-900 p-6">
       <h3 className="text-lg font-bold text-white mb-4">Your Position</h3>
       <div className="space-y-4">
         <div>
-          <p className="text-gray-400 text-sm">Deposited</p>
+          <p className="text-neutral-400 text-sm">Deposited</p>
           <p className="text-2xl font-bold text-white">{userDeposit || "100.00"} DOT</p>
         </div>
         <div>
-          <p className="text-gray-400 text-sm">Token Balance</p>
+          <p className="text-neutral-400 text-sm">Token Balance</p>
           <p className="text-2xl font-bold text-white">{userDeposit || "100.00"} {tokenSymbol}</p>
         </div>
         <div>
-          <p className="text-gray-400 text-sm">Value</p>
-          <p className="text-2xl font-bold text-green-400">$102.00</p>
+          <p className="text-neutral-400 text-sm">Value</p>
+          <p className="text-2xl font-bold text-emerald-400">$102.00</p>
         </div>
       </div>
     </div>
@@ -445,23 +449,23 @@ function XCMStatusCard() {
   ];
 
   const statusColors = {
-    confirmed: "text-green-400",
-    pending: "text-yellow-400",
+    confirmed: "text-emerald-400",
+    pending: "text-amber-400",
     failed: "text-red-400",
   };
 
   return (
-    <div className="bg-gray-800 rounded-2xl p-6 border border-gray-700">
+    <div className="rounded-3xl border border-white/10 bg-neutral-900 p-6">
       <h3 className="text-lg font-bold text-white mb-4">XCM Status</h3>
       <div className="space-y-3">
         {messages.map((msg, i) => (
           <div key={i} className="flex items-center justify-between">
             <div className="flex items-center">
               <span className={`w-2 h-2 rounded-full mr-2 ${
-                msg.status === "confirmed" ? "bg-green-400" :
-                msg.status === "pending" ? "bg-yellow-400" : "bg-red-400"
+                msg.status === "confirmed" ? "bg-emerald-400" :
+                msg.status === "pending" ? "bg-amber-400" : "bg-red-400"
               }`} />
-              <span className="text-gray-300">{msg.chain}</span>
+              <span className="text-neutral-300">{msg.chain}</span>
             </div>
             <span className={`text-sm ${statusColors[msg.status]}`}>
               {msg.status === "confirmed" ? "✓" : "⏳"} {msg.amount}

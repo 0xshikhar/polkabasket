@@ -20,9 +20,11 @@
     "@reactive-dot/wallet-walletconnect": "^0.18.4",
     "dot-connect": "^0.28.0",
     "polkadot-api": "^1.23.1",
+    "postprocessing": "^6.38.3",
     "react": "^19.2.3",
     "react-dom": "^19.2.3",
     "react-router-dom": "^7.13.1",
+    "three": "^0.183.2",
     "viem": "^2.47.0"
   },
   "devDependencies": {
