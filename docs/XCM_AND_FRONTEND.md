@@ -20,6 +20,19 @@ PolkaBasket uses **XCM v4** to teleport DOT and execute remote protocol calls ac
 
 > **Verify these IDs** on the Westend testnet before use. Parachain IDs differ between Polkadot mainnet and Westend.
 
+### How these four parachains are used
+
+| Parachain | Role | Where it’s used |
+|-----------|------|------------------|
+| **Polkadot Hub (1000)** | **Home chain** — BasketManager and basket tokens live here. User deposits/withdraws on Hub. | Frontend RPC (`westend-asset-hub-eth-rpc.polkadot.io`), `contracts.ts` chain config, XCM “from” chain in messages. |
+| **Hydration (2034)** | **Allocation target** — receives a share of each deposit (e.g. 40%) for LP. | `BasketManager` allocations (`paraId: 2034`), `deploy.ts` and `BasketManager.test.ts` allocation arrays, XCM “to” chain in `buildHydrationDepositXCM` and send targets. |
+| **Moonbeam (2004)** | **Allocation target** — receives a share (e.g. 30%) for lending. | Same as above: contract allocations, deploy script, tests, XCM destination. |
+| **Acala (2000)** | **Allocation target** — receives a share (e.g. 30%) for staking/DeFi. | Same as above: contract allocations, deploy script, tests, XCM destination. |
+
+- **Contracts:** Each basket’s `allocations[]` has one entry per target chain (`paraId` + `protocol` + `weightBps`). On `deposit()`, `BasketManager._dispatchXCMDeposit()` calls the XCM precompile with `alloc.paraId` (2034, 2004, 2000) so the Hub sends XCM to each parachain.
+- **Deploy / tests:** `contracts/scripts/deploy.ts` and `contracts/test/BasketManager.test.ts` use the same paraIds (2034, 2004, 2000) so the first basket matches this spec.
+- **Frontend:** UI shows “Hydration LP”, “Moonbeam Lending”, “Acala Staking” etc.; the actual chain selection is fixed in the basket’s allocation config on-chain.
+
 ---
 
 ## XCM Message Flow — Deposit

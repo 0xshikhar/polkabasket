@@ -9,6 +9,11 @@ const config: HardhatUserConfig = {
       evmVersion: "berlin",
     },
   },
+  paths: {
+    root: ".",
+    sources: "contracts/contracts",
+    tests: "contracts/test",
+  },
   networks: {
     polkadotHub: {
       url: "https://westend-asset-hub-eth-rpc.polkadot.io",

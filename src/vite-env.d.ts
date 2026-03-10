@@ -13,5 +13,9 @@ interface InjectedExtension {
 declare global {
   interface Window {
     injectedWeb3?: Record<string, { enable: () => Promise<InjectedExtension> }>;
+    /** SubWallet EVM provider */
+    SubWallet?: { isSubWallet?: boolean; request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
+    /** MetaMask / standard EIP-1193 */
+    ethereum?: { request: (args: { method: string; params?: unknown[] }) => Promise<unknown> };
   }
 }

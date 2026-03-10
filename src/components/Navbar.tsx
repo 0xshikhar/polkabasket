@@ -1,6 +1,11 @@
 import { Link, useLocation } from "react-router-dom";
 import { useState } from "react";
-import { useSubWallet, truncateAddress } from "../hooks/useSubWallet";
+import { useWallet } from "../contexts/WalletContext";
+
+function truncateAddress(addr: string, head = 6, tail = 4) {
+  if (addr.length <= head + tail) return addr;
+  return `${addr.slice(0, head)}...${addr.slice(-tail)}`;
+}
 
 export function Navbar() {
   const location = useLocation();
@@ -89,10 +94,10 @@ export function Navbar() {
 }
 
 function SubWalletButton() {
-  const { isAvailable, account, error, loading, connect, disconnect } = useSubWallet();
+  const { address, isAvailable, error, loading, connect, disconnect } = useWallet();
   const [showDropdown, setShowDropdown] = useState(false);
 
-  if (account) {
+  if (address) {
     return (
       <div className="relative">
         <button
@@ -101,15 +106,15 @@ function SubWalletButton() {
           className="flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10"
         >
           <span className="h-2 w-2 rounded-full bg-neutral-400" />
-          {truncateAddress(account.address)}
+          {truncateAddress(address)}
         </button>
         {showDropdown && (
           <>
             <div className="fixed inset-0 z-40" aria-hidden onClick={() => setShowDropdown(false)} />
             <div className="absolute right-0 z-50 mt-2 w-56 rounded-xl border border-white/10 bg-neutral-900 py-2 shadow-xl">
               <div className="border-b border-white/10 px-4 py-2">
-                <p className="text-xs text-neutral-500">Connected with SubWallet</p>
-                <p className="mt-1 truncate font-mono text-sm text-white">{account.address}</p>
+                <p className="text-xs text-neutral-500">EVM (SubWallet / MetaMask)</p>
+                <p className="mt-1 truncate font-mono text-sm text-white">{address}</p>
               </div>
               <button
                 type="button"
@@ -149,7 +154,7 @@ function SubWalletButton() {
         disabled={loading}
         className="rounded-full border border-white/20 bg-white/5 px-4 py-2 text-sm font-medium text-white transition hover:bg-white/10 disabled:opacity-50"
       >
-        {loading ? "Connecting…" : "Connect SubWallet"}
+        {loading ? "Connecting…" : "Connect Wallet"}
       </button>
       {error && (
         <p className="absolute right-0 top-full mt-1 max-w-[200px] text-right text-xs text-red-400">

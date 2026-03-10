@@ -2,10 +2,20 @@ import { expect } from "chai";
 import { ethers } from "hardhat";
 import { BasketManager, BasketToken } from "../typechain-types";
 
+const XCM_PRECOMPILE_ADDRESS = "0x0000000000000000000000000000000000000800";
+
 describe("BasketManager", function () {
   let basketManager: BasketManager;
   let owner: any;
   let user: any;
+
+  before(async function () {
+    const MockXCM = await ethers.getContractFactory("MockXCMPrecompile");
+    const mockXCM = await MockXCM.deploy();
+    await mockXCM.waitForDeployment();
+    const code = await ethers.provider.send("eth_getCode", [await mockXCM.getAddress()]);
+    await ethers.provider.send("hardhat_setCode", [XCM_PRECOMPILE_ADDRESS, code]);
+  });
 
   const ALLOCATIONS = [
     {

@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useBasketManager, Basket } from "../hooks/useBasketManager";
-import { formatEther } from "viem";
+import { useWallet } from "../contexts/WalletContext";
+import { useBasketManager } from "../hooks/useBasketManager";
+import { parseEther } from "viem";
+import type { WalletClient } from "viem";
 
 interface Allocation {
   chain: string;
@@ -56,14 +58,15 @@ const BASKET_DATA: Record<string, {
 export function BasketPage() {
   const { id } = useParams<{ id: string }>();
   const basketId = id ? BigInt(id) : 0n;
-  const { getBasket, getBasketNAV } = useBasketManager();
-  
+  const { walletClient } = useWallet();
+  const { getBasket: _getBasket, getBasketNAV: _getBasketNAV } = useBasketManager();
+
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
   const [basketData, setBasketData] = useState(BASKET_DATA["0"]);
   const [depositAmount, setDepositAmount] = useState("");
   const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [userBalance, setUserBalance] = useState("0");
-  const [userDeposit, setUserDeposit] = useState("0");
+  const [userBalance] = useState("0");
+  const [userDeposit] = useState("0");
 
   useEffect(() => {
     if (id && BASKET_DATA[id]) {
@@ -153,18 +156,20 @@ export function BasketPage() {
               </div>
 
               {activeTab === "deposit" ? (
-                <DepositForm 
-                  basketId={basketId} 
+                <DepositForm
+                  basketId={basketId}
                   amount={depositAmount}
                   setAmount={setDepositAmount}
                   allocations={basketData.allocations}
+                  walletClient={walletClient}
                 />
               ) : (
-                <WithdrawForm 
+                <WithdrawForm
                   basketId={basketId}
                   amount={withdrawAmount}
                   setAmount={setWithdrawAmount}
                   userBalance={userBalance}
+                  walletClient={walletClient}
                 />
               )}
             </div>
@@ -263,26 +268,29 @@ function AllocationChart({ allocations }: { allocations: Allocation[] }) {
   );
 }
 
-function DepositForm({ 
-  basketId, 
-  amount, 
+function DepositForm({
+  basketId,
+  amount,
   setAmount,
-  allocations 
-}: { 
+  allocations,
+  walletClient,
+}: {
   basketId: bigint;
   amount: string;
   setAmount: (v: string) => void;
   allocations: Allocation[];
+  walletClient: WalletClient | null;
 }) {
-  const [isLoading, setIsLoading] = useState(false);
+  const { deposit, isLoading, error } = useBasketManager();
 
   const handleDeposit = async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    if (!walletClient || !amount || parseFloat(amount) <= 0) return;
+    try {
+      await deposit(walletClient, basketId, parseFloat(amount));
       setAmount("");
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleMax = () => {
@@ -327,20 +335,23 @@ function DepositForm({
         </div>
       )}
 
+      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
       <button
         type="button"
         onClick={handleDeposit}
-        disabled={isLoading || !amount || parseFloat(amount) <= 0}
+        disabled={isLoading || !amount || parseFloat(amount) <= 0 || !walletClient}
         className="w-full rounded-xl py-4 bg-emerald-600 font-semibold text-white transition hover:bg-emerald-500 disabled:bg-neutral-700 disabled:cursor-not-allowed"
       >
         {isLoading ? (
           <span className="flex items-center justify-center">
-            <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            <svg className="-ml-1 mr-3 h-5 w-5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
             </svg>
             Depositing...
           </span>
+        ) : !walletClient ? (
+          "Connect wallet to deposit"
         ) : (
           "Deposit DOT"
         )}
@@ -349,26 +360,30 @@ function DepositForm({
   );
 }
 
-function WithdrawForm({ 
-  basketId, 
-  amount, 
+function WithdrawForm({
+  basketId,
+  amount,
   setAmount,
-  userBalance 
-}: { 
+  userBalance,
+  walletClient,
+}: {
   basketId: bigint;
   amount: string;
   setAmount: (v: string) => void;
   userBalance: string;
+  walletClient: WalletClient | null;
 }) {
-  const [isLoading, setIsLoading] = useState(false);
+  const { withdraw, isLoading, error } = useBasketManager();
 
   const handleWithdraw = async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
+    if (!walletClient || !amount || parseFloat(amount) <= 0) return;
+    try {
+      const tokenAmount = parseEther(amount);
+      await withdraw(walletClient, basketId, tokenAmount);
       setAmount("");
-    }, 2000);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   const handleMax = () => {
@@ -407,13 +422,14 @@ function WithdrawForm({
         </div>
       )}
 
+      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
       <button
         type="button"
         onClick={handleWithdraw}
-        disabled={isLoading || !amount || parseFloat(amount) <= 0}
+        disabled={isLoading || !amount || parseFloat(amount) <= 0 || !walletClient}
         className="w-full rounded-xl py-4 bg-red-600 font-semibold text-white transition hover:bg-red-500 disabled:bg-neutral-700 disabled:cursor-not-allowed"
       >
-        {isLoading ? "Withdrawing..." : "Withdraw DOT"}
+        {isLoading ? "Withdrawing..." : !walletClient ? "Connect wallet to withdraw" : "Withdraw DOT"}
       </button>
     </div>
   );
