@@ -36,10 +36,15 @@ export const PARACHAINS = {
   ACALA: { id: 2000, name: "Acala", type: "Staking" },
 } as const;
 
-export const PRECOMPILE_ADDRESSES = {
-  XCM: "0x0000000000000000000000000000000000000800",
-  PVM_ENGINE: "0x0000000000000000000000000000000000000900",
-} as const;
+// PVM Engine configuration
+// Set VITE_USE_MOCK_PVM=true in .env to use mock for local testing
+export const USE_MOCK_PVM = import.meta.env.VITE_USE_MOCK_PVM === 'true';
+
+// Contract addresses
+// For local testing with mock: deploy MockPVMEngine and update this
+export const PVM_ENGINE_ADDRESS = USE_MOCK_PVM 
+  ? "0x0000000000000000000000000000000000000900" // Mock address
+  : "0x0000000000000000000000000000000000000900"; // Real PVM (when deployed)
 
 export const DEFAULT_CHAINS = [PARACHAINS.HYDRA, PARACHAINS.MOONBEAM, PARACHAINS.ACALA] as const;
 
