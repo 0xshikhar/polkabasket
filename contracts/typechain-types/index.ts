@@ -36,5 +36,7 @@ export type { MockHydrationLP } from "./contracts/mocks/MockHydrationLP";
 export { MockHydrationLP__factory } from "./factories/contracts/mocks/MockHydrationLP__factory";
 export type { MockMoonbeamLending } from "./contracts/mocks/MockMoonbeamLending";
 export { MockMoonbeamLending__factory } from "./factories/contracts/mocks/MockMoonbeamLending__factory";
+export type { MockPVMEngine } from "./contracts/mocks/MockPVMEngine";
+export { MockPVMEngine__factory } from "./factories/contracts/mocks/MockPVMEngine__factory";
 export type { MockXCMPrecompile } from "./contracts/mocks/MockXCMPrecompile";
 export { MockXCMPrecompile__factory } from "./factories/contracts/mocks/MockXCMPrecompile__factory";

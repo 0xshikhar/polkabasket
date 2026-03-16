@@ -569,6 +569,42 @@
       "artifacts": [
         "MockXCMPrecompile"
       ]
+    },
+    "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/contracts/mocks/MockPVMEngine.sol": {
+      "lastModificationDate": 1773638011443,
+      "contentHash": "7fc4115a8e2098d27f945450ad59e2d6",
+      "sourceName": "contracts/mocks/MockPVMEngine.sol",
+      "solcConfig": {
+        "version": "0.8.20",
+        "settings": {
+          "optimizer": {
+            "enabled": true,
+            "runs": 200
+          },
+          "evmVersion": "berlin",
+          "outputSelection": {
+            "*": {
+              "*": [
+                "abi",
+                "evm.bytecode",
+                "evm.deployedBytecode",
+                "evm.methodIdentifiers",
+                "metadata"
+              ],
+              "": [
+                "ast"
+              ]
+            }
+          }
+        }
+      },
+      "imports": [],
+      "versionPragmas": [
+        "^0.8.20"
+      ],
+      "artifacts": [
+        "MockPVMEngine"
+      ]
     }
   }
 }

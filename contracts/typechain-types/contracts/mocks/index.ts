@@ -4,4 +4,5 @@
 export type { MockDOT } from "./MockDOT";
 export type { MockHydrationLP } from "./MockHydrationLP";
 export type { MockMoonbeamLending } from "./MockMoonbeamLending";
+export type { MockPVMEngine } from "./MockPVMEngine";
 export type { MockXCMPrecompile } from "./MockXCMPrecompile";

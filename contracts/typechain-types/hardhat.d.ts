@@ -74,6 +74,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockMoonbeamLending__factory>;
     getContractFactory(
+      name: "MockPVMEngine",
+      signerOrOptions?: ethers.Signer | FactoryOptions
+    ): Promise<Contracts.MockPVMEngine__factory>;
+    getContractFactory(
       name: "MockXCMPrecompile",
       signerOrOptions?: ethers.Signer | FactoryOptions
     ): Promise<Contracts.MockXCMPrecompile__factory>;
@@ -154,6 +158,11 @@ declare module "hardhat/types/runtime" {
       signer?: ethers.Signer
     ): Promise<Contracts.MockMoonbeamLending>;
     getContractAt(
+      name: "MockPVMEngine",
+      address: string | ethers.Addressable,
+      signer?: ethers.Signer
+    ): Promise<Contracts.MockPVMEngine>;
+    getContractAt(
       name: "MockXCMPrecompile",
       address: string | ethers.Addressable,
       signer?: ethers.Signer
@@ -220,6 +229,10 @@ declare module "hardhat/types/runtime" {
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockMoonbeamLending>;
     deployContract(
+      name: "MockPVMEngine",
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockPVMEngine>;
+    deployContract(
       name: "MockXCMPrecompile",
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockXCMPrecompile>;
@@ -299,6 +312,11 @@ declare module "hardhat/types/runtime" {
       args: any[],
       signerOrOptions?: ethers.Signer | DeployContractOptions
     ): Promise<Contracts.MockMoonbeamLending>;
+    deployContract(
+      name: "MockPVMEngine",
+      args: any[],
+      signerOrOptions?: ethers.Signer | DeployContractOptions
+    ): Promise<Contracts.MockPVMEngine>;
     deployContract(
       name: "MockXCMPrecompile",
       args: any[],

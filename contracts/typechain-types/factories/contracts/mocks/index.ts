@@ -4,4 +4,5 @@
 export { MockDOT__factory } from "./MockDOT__factory";
 export { MockHydrationLP__factory } from "./MockHydrationLP__factory";
 export { MockMoonbeamLending__factory } from "./MockMoonbeamLending__factory";
+export { MockPVMEngine__factory } from "./MockPVMEngine__factory";
 export { MockXCMPrecompile__factory } from "./MockXCMPrecompile__factory";
