@@ -1,7 +1,5 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
-import { Keyring } from "@polkadot/keyring";
 import { readFileSync } from "fs";
-import { ethers } from "ethers";
 
 const RPC_URL = process.env.RPC_URL || "wss://westend-asset-hub-rpc.polkadot.io";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -14,58 +12,72 @@ async function main() {
   }
 
   const key = PRIVATE_KEY.startsWith("0x") ? PRIVATE_KEY : "0x" + PRIVATE_KEY;
-  const ethAddress = new ethers.Wallet(key).address;
-  console.log("Ethereum address:", ethAddress);
-
+  
   console.log("Connecting to:", RPC_URL);
   const provider = new WsProvider(RPC_URL);
-  
-  // Use noInitWarn to suppress init warnings
   const api = await ApiPromise.create({ 
     provider,
     noInitWarn: true 
   });
 
-  // Create keyring with ethereum type
-  const keyring = new Keyring({ type: "ethereum", ss58Format: 0 });
+  // Create signer using ethereum chain spec
+  const { Signature } = await import("@polkadot/types");
+  const { wrapSignature } = await import("@polkadot/api/signer");
+  
+  // Use polkadot keyring for ECDSA
+  const { Keyring } = await import("@polkadot/keyring");
+  const keyring = new Keyring({ type: "ethereum", ss58Format: 42 });
   const deployer = keyring.addFromUri(key);
-  console.log("Deployer (Polkadot):", deployer.address);
+  console.log("Deployer address:", deployer.address);
 
   const contractBlob = readFileSync("./contract.polkavm");
   console.log("Contract size:", contractBlob.length, "bytes");
 
-  // Use instantiateWithCode to upload and instantiate in one transaction
-  console.log("\nDeploying contract...");
-  const instantiateTx = api.tx.revive.instantiateWithCode(
-    0,                              // value (Balance)
-    { gas: 10000000000 },           // weight_limit
-    null,                           // storage_deposit_limit
-    contractBlob,                   // code
-    "0x00",                        // data (constructor selector)
-    null                            // salt
+  // First, let's try to upload code (simpler operation)
+  console.log("\n1. Uploading code to chain...");
+  
+  const uploadTx = api.tx.revive.uploadCode(
+    { storageDepositLimit: null },
+    contractBlob
   );
 
-  await new Promise((resolve, reject) => {
-    instantiateTx.signAndSend(deployer, ({ events, status }) => {
-      console.log("  Status:", status.type);
+  try {
+    const result = await new Promise((resolve, reject) => {
+      let extrinsicFailed = false;
+      let codeHash = null;
       
-      if (status.isInBlock || status.isFinalized) {
-        for (const { event } of events) {
-          console.log("  Event:", event.section + "." + event.method);
-          if (event.section === "revive" && event.method === "Instantiated") {
-            console.log("  ✓ Contract address:", event.data[1].toString());
+      const unsubscribe = uploadTx.signAndSend(deployer, ({ events, status }) => {
+        console.log("  Status:", status.type);
+        
+        if (status.isInBlock || status.isFinalized) {
+          for (const { event } of events) {
+            console.log("  Event:", event.section + "." + event.method);
+            if (event.section === "revive" && event.method === "CodeStored") {
+              codeHash = event.data[0].toString();
+              console.log("  ✓ Code hash:", codeHash);
+            }
+            if (event.section === "system" && event.method === "ExtrinsicFailed") {
+              extrinsicFailed = true;
+              console.log("  ✗ Failed:", event.data.toString());
+            }
           }
-          if (event.section === "system" && event.method === "ExtrinsicFailed") {
-            console.log("  ✗ Extrinsic failed:", JSON.stringify(event.data.toJSON()));
-          }
+          unsubscribe();
+          resolve(codeHash);
         }
-        resolve();
-      }
-    }).catch((err) => {
-      console.error("Error:", err.message);
-      reject(err);
+      });
+
+      // Timeout after 2 minutes
+      setTimeout(() => {
+        unsubscribe();
+        reject(new Error("Transaction timeout"));
+      }, 120000);
     });
-  });
+
+    console.log("\nUpload result:", result);
+    
+  } catch (error) {
+    console.error("Upload error:", error.message);
+  }
 
   await api.disconnect();
   console.log("\nDone!");

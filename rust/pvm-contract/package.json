@@ -2,6 +2,7 @@
   "name": "tele-basket-pvm",
   "version": "0.1.0",
   "private": true,
+  "type": "module",
   "scripts": {
     "build": "make all",
     "deploy": "node scripts/deploy.js"
