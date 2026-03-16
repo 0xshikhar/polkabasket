@@ -4,9 +4,20 @@
 
 **TeleBasket** is a cross-chain DeFi basket primitive for Polkadot Hub (PolkaVM). Users deposit DOT once and receive a basket token representing capital deployed across multiple parachain protocols (Hydration, Moonbeam, Acala).
 
+**Last Updated:** March 16, 2026
+
 ---
 
-## Implementation Status
+## Implementation Status Summary
+
+| Layer | Status | Notes |
+|-------|--------|-------|
+| Smart Contracts | 🟡 ~70% | Core logic done, testing incomplete |
+| PVM Engine | 🟢 ~85% | Rust logic complete, PolkaVM build pending |
+| Frontend | 🟡 ~60% | Core UI done, wallet integration in progress |
+| XCM Integration | 🔴 ~30% | Message builders exist, actual XCM not tested |
+
+---
 
 ### ✅ Completed
 
@@ -67,48 +78,47 @@
 
 #### Smart Contracts
 
-| Item | Priority | Description |
-|------|----------|-------------|
-| Unit Tests | 🔴 High | `BasketManager.test.ts` exists but needs setup |
-| Integration Tests | 🔴 High | Cross-chain XCM tests |
-| Mock XCM Precompile | 🟡 Medium | Mock for local testing |
-| Mock PVM Engine | 🟡 Medium | Mock for local testing |
+| Item | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Unit Tests | 🔴 High | ❌ Not Run | `BasketManager.test.ts` exists but needs setup |
+| Integration Tests | 🔴 High | ❌ Not Implemented | Cross-chain XCM tests |
+| Mock XCM Precompile | 🟡 Medium | ✅ Done | `MockXCMPrecompile.sol` exists |
+| Mock PVM Engine | 🟡 Medium | ❌ Missing | No mock for local testing |
 
 #### PVM Engine
 
-| Item | Priority | Description |
-|------|----------|-------------|
-| PolkaVM Build | 🔴 High | Compile to RISC-V bytecode |
-| Deployment to Testnet | 🔴 High | Deploy as precompile |
-| Cargo Workspace | 🟡 Medium | Add workspace config |
+| Item | Priority | Status | Description |
+|------|----------|--------|-------------|
+| PolkaVM Build | 🔴 High | ❌ Not Done | Compile to RISC-V bytecode |
+| Deployment to Testnet | 🔴 High | ❌ Not Done | Deploy as precompile |
+| Cargo Workspace | 🟡 Medium | ❌ Missing | No workspace config |
 
 #### Frontend
 
-| Item | Priority | Description |
-|------|----------|-------------|
-| Wallet Connection | 🔴 High | Connect EVM wallet |
-| Withdraw Form | 🔴 High | Burn tokens, withdraw |
-| Rebalance Panel | 🟡 Medium | Trigger rebalance |
-| Live XCM Status | 🟡 Medium | Poll XCM message status |
-| Real-time Data | 🟡 Medium | WebSocket for updates |
-| Navigation | 🟡 Medium | Multiple basket pages |
+| Item | Priority | Status | Description |
+|------|----------|--------|-------------|
+| Wallet Connection | 🔴 High | 🟡 Partial | `useEVMWallet.ts`, `useSubWallet.ts` exist but incomplete |
+| Withdraw Form | 🔴 High | ❌ Missing | No withdraw UI component |
+| Rebalance Panel | 🟡 Medium | ❌ Missing | No rebalance UI |
+| Live XCM Status | 🟡 Medium | 🟡 Partial | Component exists but not wired |
+| Real-time Data | 🟡 Medium | ❌ Missing | No WebSocket for updates |
 
 #### XCM Integration
 
-| Item | Priority | Description |
-|------|----------|-------------|
-| XCM Message Builders | ✅ Complete | Basic structure |
-| Sovereign Account Utils | 🔴 High | Derivation functions |
-| Chopsticks Setup | 🔴 High | Local fork testing |
-| Integration Tests | 🔴 High | End-to-end XCM flow |
+| Item | Priority | Status | Description |
+|------|----------|--------|-------------|
+| XCM Message Builders | ✅ Complete | ✅ Done | Structure in `xcm/messages/` |
+| Sovereign Account Utils | 🔴 High | ❌ Not Implemented | No derivation functions |
+| Chopsticks Setup | 🔴 High | ❌ Not Done | No local fork testing |
+| Integration Tests | 🔴 High | ❌ Not Implemented | End-to-end XCM flow |
 
 #### Documentation
 
-| Item | Priority | Description |
-|------|----------|-------------|
-| README.md | 🔴 High | Project setup instructions |
-| Demo Video | 🔴 High | 5-min demo |
-| API Documentation | 🟡 Medium | Contract API docs |
+| Item | Priority | Status | Description |
+|------|----------|--------|-------------|
+| README.md | 🔴 High | ❌ Missing | No project README |
+| Demo Video | 🔴 High | ❌ Not Recorded | 5-min demo needed |
+| API Documentation | 🟡 Medium | ❌ Missing | Contract API docs |
 
 ---
 
@@ -232,6 +242,92 @@ User
 
 ---
 
+## Implementation Priority List
+
+### 🔴 CRITICAL (Must Complete This Week)
+
+| # | Task | Estimated Effort | Files/Components |
+|---|------|------------------|------------------|
+| 1 | **Run contract tests** | 2 hrs | `contracts/test/BasketManager.test.ts` |
+| 2 | **Fix wallet connection** | 4 hrs | `src/hooks/useEVMWallet.ts`, `src/contexts/WalletContext.tsx` |
+| 3 | **Create WithdrawForm component** | 3 hrs | `src/components/WithdrawForm.tsx` (missing) |
+| 4 | **Wire deposit flow end-to-end** | 4 hrs | Connect DepositForm → useBasketManager → contract |
+| 5 | **Deploy contracts to testnet** | 2 hrs | `contracts/scripts/deploy.ts` → Westend Asset Hub |
+
+### 🟡 HIGH (Next 1-2 Weeks)
+
+| # | Task | Estimated Effort | Files/Components |
+|---|------|------------------|------------------|
+| 6 | **Add MockPVMEngine** | 2 hrs | Create `contracts/contracts/mocks/MockPVMEngine.sol` |
+| 7 | **Build RebalancePanel UI** | 3 hrs | `src/components/RebalancePanel.tsx` (missing) |
+| 8 | **Wire XCM status display** | 3 hrs | `src/components/XCMStatus.tsx` → actual XCM tracking |
+| 9 | **Set up Chopsticks fork** | 4 hrs | Local XCM testing environment |
+| 10 | **Test XCM deposit flow** | 6 hrs | Hub → Hydration → Moonbeam actual messages |
+
+### 🟢 MEDIUM (Hackathon Deadline)
+
+| # | Task | Estimated Effort | Files/Components |
+|---|------|------------------|------------------|
+| 11 | **Compile PVM Engine to RISC-V** | 4 hrs | `pvm-engine/` → PolkaVM bytecode |
+| 12 | **Write README** | 2 hrs | Project setup + architecture |
+| 13 | **Record demo video** | 3 hrs | 5-min walkthrough |
+| 14 | **Create landing page** | 2 hrs | `src/pages/HomePage.tsx` |
+
+### ⚪ LOW (Post-Hackathon)
+
+| # | Task | Estimated Effort |
+|---|------|------------------|
+| 15 | Implement oracle for yields | 1 week |
+| 16 | Deploy PVM precompile on-chain | 2 days |
+| 17 | Add Acala integration | 3 days |
+| 18 | Real-time WebSocket updates | 2 days |
+
+---
+
+## Gap Analysis: What Was Planned vs What's Done
+
+### Smart Contracts
+- ✅ BasketManager.sol - Core logic implemented
+- ✅ BasketToken.sol - ERC-20 with mint/burn
+- ✅ IXCMPrecompile.sol - Interface defined
+- ✅ IPVMEngine.sol - Interface defined
+- ✅ IBasketManager.sol - Full interface
+- ✅ MockDOT.sol, MockHydrationLP.sol, MockMoonbeamLending.sol - Done
+- ✅ MockXCMPrecompile.sol - **ADDED** (not in original plan)
+- ❌ BasketManager.test.ts - File exists but **not run**
+- ❌ MockPVMEngine.sol - **NOT CREATED**
+
+### PVM Engine (Rust)
+- ✅ allocation.rs - Weight calculation
+- ✅ rebalance.rs - Drift detection
+- ✅ risk.rs - Risk-adjusted yield
+- ✅ lib.rs - Entry points
+- ✅ Tests in each module
+- ❌ PolkaVM build (riscv32em-unknown-none-elf)
+- ❌ Deployment as precompile
+
+### Frontend
+- ✅ BasketPage.tsx - Main page
+- ✅ DepositForm.tsx - Deposit UI
+- ✅ AllocationChart.tsx - Pie chart
+- ✅ XCMStatus.tsx - XCM display component
+- ✅ BasketCard.tsx - Summary card
+- ✅ useBasketManager.ts - Contract hook
+- ✅ contracts.ts - Config/ABIs
+- 🟡 useEVMWallet.ts - **Partial** (exists but incomplete)
+- 🟡 useSubWallet.ts - **Partial** (exists but incomplete)
+- ❌ WithdrawForm.tsx - **MISSING**
+- ❌ RebalancePanel.tsx - **MISSING**
+- ❌ HomePage - **INCOMPLETE** (needs polish)
+
+### XCM
+- 🟡 Message builder structures - **EXIST** but not tested
+- ❌ Sovereign account utils - **NOT IMPLEMENTED**
+- ❌ Chopsticks setup - **NOT DONE**
+- ❌ Integration tests - **NOT IMPLEMENTED**
+
+---
+
 ## Known Issues / Risks
 
 | Issue | Severity | Mitigation |
@@ -309,4 +405,4 @@ tele-basket/
 
 ---
 
-*Last updated: March 8, 2026*
+*Last updated: March 16, 2026*
