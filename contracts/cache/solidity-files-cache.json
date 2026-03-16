@@ -8,11 +8,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -48,11 +48,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -87,11 +87,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -123,11 +123,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -153,17 +153,17 @@
       ]
     },
     "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/node_modules/@openzeppelin/contracts/access/Ownable.sol": {
-      "lastModificationDate": 1773611764403,
+      "lastModificationDate": 1773646553143,
       "contentHash": "d3c790edc9ccf808a17c5a6cd13614fd",
       "sourceName": "@openzeppelin/contracts/access/Ownable.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -191,17 +191,17 @@
       ]
     },
     "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/node_modules/@openzeppelin/contracts/token/ERC20/ERC20.sol": {
-      "lastModificationDate": 1773611764316,
+      "lastModificationDate": 1773646553911,
       "contentHash": "d15c4d05583536e080f1960ab282772d",
       "sourceName": "@openzeppelin/contracts/token/ERC20/ERC20.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -232,17 +232,17 @@
       ]
     },
     "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/node_modules/@openzeppelin/contracts/utils/Context.sol": {
-      "lastModificationDate": 1773611764278,
+      "lastModificationDate": 1773646553152,
       "contentHash": "67bfbc07588eb8683b3fd8f6f909563e",
       "sourceName": "@openzeppelin/contracts/utils/Context.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -268,17 +268,17 @@
       ]
     },
     "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/node_modules/@openzeppelin/contracts/token/ERC20/IERC20.sol": {
-      "lastModificationDate": 1773611764386,
+      "lastModificationDate": 1773646553911,
       "contentHash": "9261adf6457863de3e9892f51317ec89",
       "sourceName": "@openzeppelin/contracts/token/ERC20/IERC20.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -304,17 +304,17 @@
       ]
     },
     "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/node_modules/@openzeppelin/contracts/interfaces/draft-IERC6093.sol": {
-      "lastModificationDate": 1773611764294,
+      "lastModificationDate": 1773646553158,
       "contentHash": "bcc76f4747d56c28c40ae272ef3470a6",
       "sourceName": "@openzeppelin/contracts/interfaces/draft-IERC6093.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -342,17 +342,17 @@
       ]
     },
     "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/node_modules/@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol": {
-      "lastModificationDate": 1773611764387,
+      "lastModificationDate": 1773646554692,
       "contentHash": "513778b30d2750f5d2b9b19bbcf748a5",
       "sourceName": "@openzeppelin/contracts/token/ERC20/extensions/IERC20Metadata.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -386,11 +386,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -426,11 +426,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -466,11 +466,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -505,11 +505,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -541,11 +541,11 @@
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [
@@ -571,17 +571,17 @@
       ]
     },
     "/Users/shikharsingh/Downloads/code/polkadot/tele-basket/contracts/contracts/mocks/MockPVMEngine.sol": {
-      "lastModificationDate": 1773638011443,
+      "lastModificationDate": 1773641189772,
       "contentHash": "7fc4115a8e2098d27f945450ad59e2d6",
       "sourceName": "contracts/mocks/MockPVMEngine.sol",
       "solcConfig": {
         "version": "0.8.20",
         "settings": {
+          "evmVersion": "paris",
           "optimizer": {
-            "enabled": true,
+            "enabled": false,
             "runs": 200
           },
-          "evmVersion": "berlin",
           "outputSelection": {
             "*": {
               "*": [

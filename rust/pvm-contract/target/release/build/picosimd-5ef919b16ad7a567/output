@@ -1,0 +1,1 @@
+cargo::rustc-check-cfg=cfg(picosimd, values("avx512", "supports_safe_intrinsics"))
