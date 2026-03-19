@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { parseEther } from "viem";
 import { useBasketManager } from "../hooks/useBasketManager";
-import { useWalletAddress } from "../contexts/WalletContext";
+import { useWallet, useWalletClient } from "../contexts/WalletContext";
+import type { WalletClient } from "viem";
 
 interface WithdrawFormProps {
   basketId: bigint;
@@ -18,10 +19,11 @@ export function WithdrawForm({
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const { withdraw, isLoading, error } = useBasketManager();
-  const walletAddress = useWalletAddress();
+  const walletClient = useWalletClient();
+  const { state } = useWallet();
 
   const handleWithdraw = useCallback(async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
+    if (!amount || parseFloat(amount) <= 0 || !walletClient) return;
     
     setTxStatus("pending");
     setTxHash(null);
@@ -29,7 +31,7 @@ export function WithdrawForm({
     try {
       const tokenAmount = parseEther(amount);
       const hash = await withdraw(
-        { account: { address: walletAddress } } as never,
+        walletClient as WalletClient,
         basketId,
         tokenAmount
       );
@@ -40,14 +42,14 @@ export function WithdrawForm({
       console.error("Withdraw error:", err);
       setTxStatus("error");
     }
-  }, [amount, basketId, walletAddress, withdraw]);
+  }, [amount, basketId, walletClient, withdraw]);
 
   const handleMax = useCallback(() => {
     setAmount(userTokenBalance);
   }, [userTokenBalance]);
 
   const isValidAmount = amount && parseFloat(amount) > 0;
-  const isConnected = !!walletAddress;
+  const isConnected = state.evm.isConnected;
   const hasBalance = parseFloat(userTokenBalance) > 0;
 
   return (

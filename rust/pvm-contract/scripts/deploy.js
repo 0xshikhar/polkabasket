@@ -1,5 +1,5 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
-import { readFileSync } from "fs";
+import { readFileSync, writeFileSync } from "fs";
 
 const RPC_URL = process.env.RPC_URL || "wss://westend-asset-hub-rpc.polkadot.io";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
@@ -13,74 +13,138 @@ async function main() {
 
   const key = PRIVATE_KEY.startsWith("0x") ? PRIVATE_KEY : "0x" + PRIVATE_KEY;
   
-  console.log("Connecting to:", RPC_URL);
+  console.log("=".repeat(50));
+  console.log("TeleBasket PVM Engine Deployment");
+  console.log("=".repeat(50));
+  console.log("\nConnecting to:", RPC_URL);
+  
   const provider = new WsProvider(RPC_URL);
   const api = await ApiPromise.create({ 
     provider,
     noInitWarn: true 
   });
 
-  // Create signer using ethereum chain spec
-  const { Signature } = await import("@polkadot/types");
-  const { wrapSignature } = await import("@polkadot/api/signer");
-  
-  // Use polkadot keyring for ECDSA
+  await api.isReady;
+  console.log("Connected! Chain:", (await api.rpc.system.chain()).toString());
+
   const { Keyring } = await import("@polkadot/keyring");
   const keyring = new Keyring({ type: "ethereum", ss58Format: 42 });
   const deployer = keyring.addFromUri(key);
   console.log("Deployer address:", deployer.address);
 
   const contractBlob = readFileSync("./contract.polkavm");
-  console.log("Contract size:", contractBlob.length, "bytes");
+  console.log("\nContract size:", contractBlob.length, "bytes");
 
-  // First, let's try to upload code (simpler operation)
-  console.log("\n1. Uploading code to chain...");
+  console.log("\n1. Uploading PVM code to chain...");
+  console.log("   (This uploads the Rust bytecode via revive pallet)");
   
   const uploadTx = api.tx.revive.uploadCode(
     { storageDepositLimit: null },
     contractBlob
   );
 
+  let codeHash = null;
+  let uploadSuccess = false;
+
   try {
-    const result = await new Promise((resolve, reject) => {
-      let extrinsicFailed = false;
-      let codeHash = null;
+    await new Promise((resolve, reject) => {
+      const timeout = setTimeout(() => {
+        unsubscribe();
+        reject(new Error("Transaction timeout (2 min)"));
+      }, 120000);
       
-      const unsubscribe = uploadTx.signAndSend(deployer, ({ events, status }) => {
-        console.log("  Status:", status.type);
+      let unsubscribe = uploadTx.signAndSend(deployer, ({ events, status }) => {
+        console.log("   Status:", status.type);
         
         if (status.isInBlock || status.isFinalized) {
           for (const { event } of events) {
-            console.log("  Event:", event.section + "." + event.method);
-            if (event.section === "revive" && event.method === "CodeStored") {
+            const section = event.section;
+            const method = event.method;
+            
+            if (section === "revive" && method === "CodeStored") {
               codeHash = event.data[0].toString();
-              console.log("  ✓ Code hash:", codeHash);
+              console.log("   ✓ Code stored! Hash:", codeHash);
+              uploadSuccess = true;
             }
-            if (event.section === "system" && event.method === "ExtrinsicFailed") {
-              extrinsicFailed = true;
-              console.log("  ✗ Failed:", event.data.toString());
+            if (section === "system" && method === "ExtrinsicFailed") {
+              const err = event.data.toString();
+              console.log("   ✗ Extrinsic failed:", err);
+              uploadSuccess = false;
             }
           }
+          clearTimeout(timeout);
           unsubscribe();
-          resolve(codeHash);
+          resolve();
         }
       });
-
-      // Timeout after 2 minutes
-      setTimeout(() => {
-        unsubscribe();
-        reject(new Error("Transaction timeout"));
-      }, 120000);
     });
 
-    console.log("\nUpload result:", result);
+    if (uploadSuccess && codeHash) {
+      console.log("\n2. Instantiating contract...");
+      
+      const instantiateTx = api.tx.revive.instantiate(
+        0,
+        { storageDepositLimit: null, codeHash: codeHash },
+        0n,
+        null,
+        []
+      );
+
+      await new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          unsubscribe();
+          reject(new Error("Instantiate timeout"));
+        }, 120000);
+        
+        let unsubscribe = instantiateTx.signAndSend(deployer, ({ events, status }) => {
+          console.log("   Status:", status.type);
+          
+          if (status.isInBlock || status.isFinalized) {
+            for (const { event } of events) {
+              const section = event.section;
+              const method = event.method;
+              
+              if (section === "contracts" && method === "Instantiated") {
+                const contractAddress = event.data[1].toString();
+                console.log("   ✓ Contract instantiated!");
+                console.log("   Address:", contractAddress);
+                
+                writeFileSync("./deployed_address.json", JSON.stringify({
+                  address: contractAddress,
+                  codeHash: codeHash,
+                  network: RPC_URL.includes("westend") ? "westend" : "paseo",
+                  timestamp: new Date().toISOString()
+                }, null, 2));
+              }
+            }
+            clearTimeout(timeout);
+            unsubscribe();
+            resolve();
+          }
+        });
+      });
+
+      console.log("\n" + "=".repeat(50));
+      console.log("DEPLOYMENT SUCCESSFUL!");
+      console.log("=".repeat(50));
+      console.log("\nPVM Engine Address:", codeHash);
+      console.log("(Use this as PVM_ENGINE_CODE_HASH in config)");
+      console.log("\nConfiguration:");
+      console.log("  VITE_USE_MOCK_PVM=false");
+      console.log("  VITE_PVM_CODE_HASH=" + codeHash);
+      console.log("\nSaved to: deployed_address.json");
+    } else {
+      console.log("\n✗ Upload failed - check if network supports PVM contracts");
+    }
     
   } catch (error) {
-    console.error("Upload error:", error.message);
+    console.error("\n✗ Deployment error:", error.message);
+    console.log("\nNote: Westend Asset Hub may not yet support PVM contracts.");
+    console.log("Check: https://status.polkadot.io/");
   }
 
   await api.disconnect();
-  console.log("\nDone!");
+  console.log("\nDisconnected. Done!");
 }
 
 main().catch(console.error);

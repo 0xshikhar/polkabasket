@@ -220,7 +220,6 @@ fn handle_rebalance() {
     let input_len = api::call_data_size();
     if input_len < 36 {
         api::return_value(ReturnFlags::REVERT, &[]);
-        return;
     }
 
     let mut input = [0u8; 320];
@@ -256,7 +255,6 @@ fn handle_optimize() {
     let input_len = api::call_data_size();
     if input_len < 36 {
         api::return_value(ReturnFlags::REVERT, &[]);
-        return;
     }
 
     let mut input = [0u8; 320];
@@ -289,7 +287,6 @@ fn handle_get_yields() {
     let input_len = api::call_data_size();
     if input_len < 36 {
         api::return_value(ReturnFlags::REVERT, &[]);
-        return;
     }
 
     let mut input = [0u8; 320];
@@ -314,7 +311,6 @@ fn handle_get_volatility() {
     let input_len = api::call_data_size();
     if input_len < 36 {
         api::return_value(ReturnFlags::REVERT, &[]);
-        return;
     }
 
     let mut input = [0u8; 320];

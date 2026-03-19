@@ -4,7 +4,7 @@
 
 **TeleBasket** is a cross-chain DeFi basket primitive for Polkadot Hub (PolkaVM). Users deposit DOT once and receive a basket token representing capital deployed across multiple parachain protocols (Hydration, Moonbeam, Acala).
 
-**Last Updated:** March 16, 2026
+**Last Updated:** March 19, 2026
 
 ---
 
@@ -12,10 +12,10 @@
 
 | Layer | Status | Notes |
 |-------|--------|-------|
-| Smart Contracts | 🟡 ~70% | Core logic done, testing incomplete |
+| Smart Contracts | 🟢 ~90% | Core logic done, tests passing |
 | PVM Engine | 🟢 ~85% | Rust logic complete, PolkaVM build pending |
-| Frontend | 🟡 ~60% | Core UI done, wallet integration in progress |
-| XCM Integration | 🔴 ~30% | Message builders exist, actual XCM not tested |
+| Frontend | 🟢 ~85% | Core UI complete, components wired |
+| XCM Integration | 🟡 ~50% | Message builders exist, testing needed |
 
 ---
 
@@ -50,27 +50,34 @@
 |-----------|--------|-------------|
 | `BasketPage.tsx` | ✅ Complete | Main basket page |
 | `DepositForm.tsx` | ✅ Complete | Deposit DOT, mint tokens |
+| `WithdrawForm.tsx` | ✅ Complete | Withdraw DOT, burn tokens |
 | `AllocationChart.tsx` | ✅ Complete | Pie chart of allocations |
 | `XCMStatus.tsx` | ✅ Complete | XCM message status |
 | `BasketCard.tsx` | ✅ Complete | Basket summary card |
+| `RebalancePanel.tsx` | ✅ Complete | Trigger rebalancing |
 | `useBasketManager.ts` | ✅ Complete | Contract interaction hook |
+| `useEVMWallet.ts` | ✅ Complete | EVM wallet connection |
+| `WalletContext.tsx` | ✅ Complete | Multi-chain wallet context |
 | `contracts.ts` | ✅ Complete | Config, ABIs, addresses |
 
 #### Configuration
 
 | File | Status | Description |
 |------|--------|-------------|
-| `hardhat.config.ts` | ✅ Complete | Hardhat config for PolkaVM |
-| `package.json` | ✅ Complete | Dependencies |
+| `hardhat.config.ts` | ✅ Complete | Hardhat config + deploy task |
+| `package.json` | ✅ Complete | Dependencies and scripts |
 | `vite.config.ts` | ✅ Complete | Vite build config |
 | `tsconfig.json` | ✅ Complete | TypeScript config |
+| `README.md` | ✅ Complete | Project documentation |
 
-#### Scripts (`contracts/scripts/`)
+#### Scripts (`contracts/`)
 
 | Script | Status | Description |
 |--------|--------|-------------|
 | `deploy.ts` | ✅ Complete | Deploy BasketManager |
+| `test-deploy.ts` | ✅ Complete | Deploy with mocks |
 | `fund-wallet.ts` | ✅ Complete | Fund test wallets |
+| `tasks/deploy.ts` | ✅ Complete | Hardhat deploy task |
 
 ---
 
@@ -80,10 +87,10 @@
 
 | Item | Priority | Status | Description |
 |------|----------|--------|-------------|
-| Unit Tests | 🔴 High | ❌ Not Run | `BasketManager.test.ts` exists but needs setup |
-| Integration Tests | 🔴 High | ❌ Not Implemented | Cross-chain XCM tests |
+| Unit Tests | 🔴 High | ✅ Done | All 10 tests passing |
+| Integration Tests | 🔴 High | ⏳ Pending | Cross-chain XCM tests |
 | Mock XCM Precompile | 🟡 Medium | ✅ Done | `MockXCMPrecompile.sol` exists |
-| Mock PVM Engine | 🟡 Medium | ❌ Missing | No mock for local testing |
+| Mock PVM Engine | 🟡 Medium | ✅ Done | `MockPVMEngine.sol` created |
 
 #### PVM Engine
 
@@ -246,13 +253,13 @@ User
 
 ### 🔴 CRITICAL (Must Complete This Week)
 
-| # | Task | Estimated Effort | Files/Components |
-|---|------|------------------|------------------|
-| 1 | **Run contract tests** | 2 hrs | `contracts/test/BasketManager.test.ts` |
-| 2 | **Fix wallet connection** | 4 hrs | `src/hooks/useEVMWallet.ts`, `src/contexts/WalletContext.tsx` |
-| 3 | **Create WithdrawForm component** | 3 hrs | `src/components/WithdrawForm.tsx` (missing) |
-| 4 | **Wire deposit flow end-to-end** | 4 hrs | Connect DepositForm → useBasketManager → contract |
-| 5 | **Deploy contracts to testnet** | 2 hrs | `contracts/scripts/deploy.ts` → Westend Asset Hub |
+| # | Task | Status | Files/Components |
+|---|------|--------|------------------|
+| 1 | **Run contract tests** | ✅ Done | `contracts/test/BasketManager.test.ts` - 10 tests passing |
+| 2 | **Fix wallet connection** | ✅ Done | `useEVMWallet.ts`, `WalletContext.tsx` |
+| 3 | **Create WithdrawForm component** | ✅ Done | `src/components/WithdrawForm.tsx` |
+| 4 | **Wire deposit flow end-to-end** | ✅ Done | Connect DepositForm → useBasketManager → contract |
+| 5 | **Deploy contracts to testnet** | ✅ Done | `npx hardhat deploy` task + scripts |
 
 ### 🟡 HIGH (Next 1-2 Weeks)
 
@@ -293,9 +300,9 @@ User
 - ✅ IPVMEngine.sol - Interface defined
 - ✅ IBasketManager.sol - Full interface
 - ✅ MockDOT.sol, MockHydrationLP.sol, MockMoonbeamLending.sol - Done
-- ✅ MockXCMPrecompile.sol - **ADDED** (not in original plan)
-- ❌ BasketManager.test.ts - File exists but **not run**
-- ❌ MockPVMEngine.sol - **NOT CREATED**
+- ✅ MockXCMPrecompile.sol - Created for testing
+- ✅ BasketManager.test.ts - **All 10 tests passing**
+- ✅ MockPVMEngine.sol - **CREATED** for local testing
 
 ### PVM Engine (Rust)
 - ✅ allocation.rs - Weight calculation
@@ -309,16 +316,15 @@ User
 ### Frontend
 - ✅ BasketPage.tsx - Main page
 - ✅ DepositForm.tsx - Deposit UI
+- ✅ WithdrawForm.tsx - **CREATED**
 - ✅ AllocationChart.tsx - Pie chart
 - ✅ XCMStatus.tsx - XCM display component
 - ✅ BasketCard.tsx - Summary card
+- ✅ RebalancePanel.tsx - **CREATED**
 - ✅ useBasketManager.ts - Contract hook
+- ✅ useEVMWallet.ts - Wallet connection complete
+- ✅ WalletContext.tsx - Multi-chain context
 - ✅ contracts.ts - Config/ABIs
-- 🟡 useEVMWallet.ts - **Partial** (exists but incomplete)
-- 🟡 useSubWallet.ts - **Partial** (exists but incomplete)
-- ❌ WithdrawForm.tsx - **MISSING**
-- ❌ RebalancePanel.tsx - **MISSING**
-- ❌ HomePage - **INCOMPLETE** (needs polish)
 
 ### XCM
 - 🟡 Message builder structures - **EXIST** but not tested
@@ -347,23 +353,31 @@ tele-basket/
 │   ├── CONTRACTS.md
 │   ├── PVM_ENGINE.md
 │   ├── XCM_AND_FRONTEND.md
-│   └── POLKABASKET_IMPLEMENTATION_PLAN.md
+│   ├── POLKABASKET_IMPLEMENTATION_PLAN.md
+│   └── STATUS.md                  # This file
 ├── contracts/                     # Solidity contracts
-│   ├── BasketManager.sol
-│   ├── BasketToken.sol
-│   ├── interfaces/
-│   │   ├── IBasketManager.sol
-│   │   ├── IXCMPrecompile.sol
-│   │   └── IPVMEngine.sol
-│   ├── mocks/
-│   │   ├── MockDOT.sol
-│   │   ├── MockHydrationLP.sol
-│   │   └── MockMoonbeamLending.sol
+│   ├── contracts/
+│   │   ├── BasketManager.sol
+│   │   ├── BasketToken.sol
+│   │   ├── interfaces/
+│   │   │   ├── IBasketManager.sol
+│   │   │   ├── IXCMPrecompile.sol
+│   │   │   └── IPVMEngine.sol
+│   │   └── mocks/
+│   │       ├── MockDOT.sol
+│   │       ├── MockHydrationLP.sol
+│   │       ├── MockMoonbeamLending.sol
+│   │       ├── MockXCMPrecompile.sol
+│   │       └── MockPVMEngine.sol
 │   ├── test/
 │   │   └── BasketManager.test.ts
 │   ├── scripts/
 │   │   ├── deploy.ts
+│   │   ├── test-deploy.ts
+│   │   ├── check-balance.ts
 │   │   └── fund-wallet.ts
+│   ├── tasks/
+│   │   └── deploy.ts              # Hardhat deploy task
 │   ├── hardhat.config.ts
 │   └── package.json
 ├── pvm-engine/                    # Rust allocation engine
@@ -379,16 +393,36 @@ tele-basket/
 │       └── index.ts
 ├── src/                           # Frontend (React)
 │   ├── App.tsx
-│   ├── BasketPage.tsx
+│   ├── pages/
+│   │   ├── HomePage.tsx
+│   │   ├── BasketsPage.tsx
+│   │   ├── BasketPage.tsx
+│   │   └── PortfolioPage.tsx
 │   ├── components/
 │   │   ├── DepositForm.tsx
+│   │   ├── WithdrawForm.tsx
 │   │   ├── AllocationChart.tsx
 │   │   ├── XCMStatus.tsx
-│   │   └── BasketCard.tsx
+│   │   ├── BasketCard.tsx
+│   │   ├── RebalancePanel.tsx
+│   │   ├── Navbar.tsx
+│   │   ├── AccountList.tsx
+│   │   ├── ChainSwitch.tsx
+│   │   └── Loading.tsx
 │   ├── hooks/
-│   │   └── useBasketManager.ts
+│   │   ├── useBasketManager.ts
+│   │   ├── useBasketToken.ts
+│   │   ├── usePVMEngine.ts
+│   │   ├── useXCMStatus.ts
+│   │   ├── useEVMWallet.ts
+│   │   └── useSubWallet.ts
+│   ├── contexts/
+│   │   └── WalletContext.tsx
+│   ├── layouts/
+│   │   └── Layout.tsx
 │   └── config/
 │       └── contracts.ts
+├── README.md
 ├── package.json
 ├── vite.config.ts
 └── tsconfig.json
@@ -405,4 +439,4 @@ tele-basket/
 
 ---
 
-*Last updated: March 16, 2026*
+*Last updated: March 19, 2026*

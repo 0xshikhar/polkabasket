@@ -14,6 +14,22 @@ export const westendAssetHub = {
   testnet: true,
 };
 
+export const polkadotHubTestnet = {
+  id: 420420417,
+  name: "Polkadot Hub TestNet",
+  nativeCurrency: { name: "Paseo DOT", symbol: "PAS", decimals: 18 },
+  rpcUrls: {
+    default: { http: ["https://eth-rpc-testnet.polkadot.io"] },
+  },
+  blockExplorers: {
+    default: {
+      name: "Blockscout",
+      url: "https://blockscout-passet-hub.parity-testnet.parity.io",
+    },
+  },
+  testnet: true,
+};
+
 export const paseoAssetHub = {
   id: 420420417,
   name: "Paseo Asset Hub",
@@ -40,15 +56,16 @@ export const PARACHAINS = {
 // Set VITE_USE_MOCK_PVM=true in .env to use mock for local testing
 export const USE_MOCK_PVM = import.meta.env.VITE_USE_MOCK_PVM === 'true';
 
-// Contract addresses
-// For local testing with mock: deploy MockPVMEngine and update this
-export const PVM_ENGINE_ADDRESS = USE_MOCK_PVM 
-  ? "0x0000000000000000000000000000000000000900" // Mock address
-  : "0x0000000000000000000000000000000000000900"; // Real PVM (when deployed)
+// PVM Code Hash - set after deploying via Substrate API
+export const PVM_CODE_HASH = import.meta.env.VITE_PVM_CODE_HASH || "";
+
+// PVM Engine address (on Polkadot Hub TestNet)
+export const PVM_ENGINE_ADDRESS = import.meta.env.VITE_PVM_ENGINE_ADDRESS || "";
+
+// Basket Manager address
+export const BASKET_MANAGER_ADDRESS = import.meta.env.VITE_BASKET_MANAGER_ADDRESS || "";
 
 export const DEFAULT_CHAINS = [PARACHAINS.HYDRA, PARACHAINS.MOONBEAM, PARACHAINS.ACALA] as const;
-
-export const BASKET_MANAGER_ADDRESS = "0x0000000000000000000000000000000000000001";
 
 export const BASKET_MANAGER_ABI = [
   {

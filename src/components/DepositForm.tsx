@@ -1,7 +1,8 @@
 import { useState, useCallback } from "react";
 import { useBasketManager } from "../hooks/useBasketManager";
-import { useWalletAddress } from "../contexts/WalletContext";
+import { useWallet, useWalletClient } from "../contexts/WalletContext";
 import { PARACHAINS } from "../config/contracts";
+import type { WalletClient } from "viem";
 
 interface DepositFormProps {
   basketId: bigint;
@@ -22,17 +23,19 @@ export function DepositForm({
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const { deposit, isLoading, error } = useBasketManager();
-  const walletAddress = useWalletAddress();
+  const walletClient = useWalletClient();
+  const { state } = useWallet();
+  const isConnected = state.evm.isConnected;
 
   const handleDeposit = useCallback(async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
+    if (!amount || parseFloat(amount) <= 0 || !walletClient) return;
     
     setTxStatus("pending");
     setTxHash(null);
     
     try {
       const hash = await deposit(
-        { account: { address: walletAddress } } as never,
+        walletClient as WalletClient,
         basketId,
         parseFloat(amount)
       );
@@ -43,10 +46,9 @@ export function DepositForm({
       console.error("Deposit error:", err);
       setTxStatus("error");
     }
-  }, [amount, basketId, walletAddress, deposit]);
+  }, [amount, basketId, walletClient, deposit]);
 
   const isValidAmount = amount && parseFloat(amount) > 0;
-  const isConnected = !!walletAddress;
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">

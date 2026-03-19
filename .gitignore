@@ -23,13 +23,22 @@ dist-ssr
 *.sln
 *.sw?
 
+# Environment files - NEVER commit these!
 .env
-/contracts/.env
-/pvm-engine/.env
-/frontend/.env
+.env.local
+.env.*.local
+# But KEEP these templates
+!.env.template
+!.env.example
 
+# Contract artifacts
 /contracts/artifacts
 /contracts/typechain-types
 /contracts/deployments
 
+# Rust build artifacts
 /rust/pvm-contract/target
+
+# Deployment outputs
+/rust/pvm-contract/deployed_*
+/contracts/deployed_*

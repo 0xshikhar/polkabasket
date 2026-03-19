@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useBasketManager } from "../hooks/useBasketManager";
-import { useWallet } from "../contexts/WalletContext";
+import { useWallet, useWalletClient } from "../contexts/WalletContext";
+import type { WalletClient } from "viem";
 
 interface RebalancePanelProps {
   basketId: bigint;
@@ -20,18 +21,18 @@ export function RebalancePanel({
   const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
   const [lastRebalance, setLastRebalance] = useState<Date | null>(null);
   const { rebalance, isLoading, error } = useBasketManager();
+  const walletClient = useWalletClient();
   const { state } = useWallet();
-  const walletAddress = state.evm.address;
 
   const handleRebalance = useCallback(async () => {
-    if (!walletAddress) return;
+    if (!walletClient) return;
     
     setTxStatus("pending");
     setTxHash(null);
     
     try {
       const hash = await rebalance(
-        { account: { address: walletAddress } } as never,
+        walletClient as WalletClient,
         basketId
       );
       setTxHash(hash);
@@ -41,13 +42,13 @@ export function RebalancePanel({
       console.error("Rebalance error:", err);
       setTxStatus("error");
     }
-  }, [basketId, walletAddress, rebalance]);
+  }, [basketId, walletClient, rebalance]);
 
   const needsRebalance = allocations.some(a => 
     a.drift !== undefined && Math.abs(a.drift) > 200
   );
 
-  const isConnected = !!walletAddress;
+  const isConnected = state.evm.isConnected;
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">

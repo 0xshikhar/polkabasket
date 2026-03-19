@@ -1,9 +1,7 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
-import { useWallet } from "../contexts/WalletContext";
-import { useBasketManager } from "../hooks/useBasketManager";
-import { parseEther } from "viem";
-import type { WalletClient } from "viem";
+import { DepositForm } from "../components/DepositForm";
+import { WithdrawForm } from "../components/WithdrawForm";
 
 interface Allocation {
   chain: string;
@@ -58,14 +56,9 @@ const BASKET_DATA: Record<string, {
 export function BasketPage() {
   const { id } = useParams<{ id: string }>();
   const basketId = id ? BigInt(id) : 0n;
-  const { state } = useWallet();
-  const walletClient = state.evm.walletClient;
-  const { getBasket: _getBasket, getBasketNAV: _getBasketNAV } = useBasketManager();
 
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
   const [basketData, setBasketData] = useState(BASKET_DATA["0"]);
-  const [depositAmount, setDepositAmount] = useState("");
-  const [withdrawAmount, setWithdrawAmount] = useState("");
   const [userBalance] = useState("0");
   const [userDeposit] = useState("0");
 
@@ -159,18 +152,13 @@ export function BasketPage() {
               {activeTab === "deposit" ? (
                 <DepositForm
                   basketId={basketId}
-                  amount={depositAmount}
-                  setAmount={setDepositAmount}
-                  allocations={basketData.allocations}
-                  walletClient={walletClient}
+                  basketName={basketData.symbol}
                 />
               ) : (
                 <WithdrawForm
                   basketId={basketId}
-                  amount={withdrawAmount}
-                  setAmount={setWithdrawAmount}
-                  userBalance={userBalance}
-                  walletClient={walletClient}
+                  tokenSymbol={basketData.symbol}
+                  userTokenBalance={userBalance}
                 />
               )}
             </div>
@@ -265,169 +253,6 @@ function AllocationChart({ allocations }: { allocations: Allocation[] }) {
           </div>
         ))}
       </div>
-    </div>
-  );
-}
-
-function DepositForm({
-  basketId,
-  amount,
-  setAmount,
-  allocations,
-  walletClient,
-}: {
-  basketId: bigint;
-  amount: string;
-  setAmount: (v: string) => void;
-  allocations: Allocation[];
-  walletClient: WalletClient | null;
-}) {
-  const { deposit, isLoading, error } = useBasketManager();
-  const { state } = useWallet();
-
-  const handleDeposit = async () => {
-    if (!walletClient || !amount || parseFloat(amount) <= 0) return;
-    try {
-      await deposit(walletClient, basketId, parseFloat(amount));
-      setAmount("");
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleMax = () => {
-    setAmount("100");
-  };
-
-  const isConnected = !!state.evm.address;
-
-  return (
-    <div>
-      <div className="mb-4">
-        <label className="block text-neutral-400 text-sm mb-2">Amount (DOT)</label>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          />
-          <button
-            type="button"
-            onClick={handleMax}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white transition hover:bg-white/10"
-          >
-            MAX
-          </button>
-        </div>
-      </div>
-
-      {amount && parseFloat(amount) > 0 && (
-        <div className="rounded-xl border border-white/5 bg-white/5 p-4 mb-4">
-          <p className="text-neutral-400 text-sm mb-3">Your deposit will be allocated to:</p>
-          <div className="space-y-2">
-            {allocations.map((alloc, i) => (
-              <div key={i} className="flex justify-between text-sm">
-                <span className="text-neutral-300">{alloc.chain}</span>
-                <span className="text-white">
-                  {((parseFloat(amount) * alloc.weight) / 100).toFixed(4)} DOT
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
-      <button
-        type="button"
-        onClick={handleDeposit}
-        disabled={isLoading || !amount || parseFloat(amount) <= 0 || !walletClient}
-        className="w-full rounded-xl py-4 bg-emerald-600 font-semibold text-white transition hover:bg-emerald-500 disabled:bg-neutral-700 disabled:cursor-not-allowed"
-      >
-        {!isConnected 
-          ? "Connect Wallet to Deposit" 
-          : isLoading 
-            ? "Depositing..." 
-            : "Deposit DOT"
-        }
-      </button>
-    </div>
-  );
-}
-
-function WithdrawForm({
-  basketId,
-  amount,
-  setAmount,
-  userBalance,
-  walletClient,
-}: {
-  basketId: bigint;
-  amount: string;
-  setAmount: (v: string) => void;
-  userBalance: string;
-  walletClient: WalletClient | null;
-}) {
-  const { withdraw, isLoading, error } = useBasketManager();
-
-  const handleWithdraw = async () => {
-    if (!walletClient || !amount || parseFloat(amount) <= 0) return;
-    try {
-      const tokenAmount = parseEther(amount);
-      await withdraw(walletClient, basketId, tokenAmount);
-      setAmount("");
-    } catch (err) {
-      console.error(err);
-    }
-  };
-
-  const handleMax = () => {
-    setAmount(userBalance || "50");
-  };
-
-  return (
-    <div>
-      <div className="mb-4">
-        <label className="block text-neutral-400 text-sm mb-2">Amount (Token)</label>
-        <div className="flex gap-2">
-          <input
-            type="number"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
-            placeholder="0.00"
-            className="flex-1 rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-white placeholder-neutral-500 focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500"
-          />
-          <button
-            type="button"
-            onClick={handleMax}
-            className="rounded-xl border border-white/10 bg-white/5 px-4 py-2 text-white transition hover:bg-white/10"
-          >
-            MAX
-          </button>
-        </div>
-        <p className="text-neutral-500 text-sm mt-2">
-          Available: {userBalance || "50.00"} xDOT-LIQ
-        </p>
-      </div>
-
-      {amount && parseFloat(amount) > 0 && (
-        <div className="rounded-xl border border-white/5 bg-white/5 p-4 mb-4">
-          <p className="text-neutral-400 text-sm mb-2">You will receive:</p>
-          <p className="text-2xl font-bold text-white">{amount} DOT</p>
-        </div>
-      )}
-
-      {error && <p className="mb-3 text-sm text-red-400">{error}</p>}
-      <button
-        type="button"
-        onClick={handleWithdraw}
-        disabled={isLoading || !amount || parseFloat(amount) <= 0 || !walletClient}
-        className="w-full rounded-xl py-4 bg-red-600 font-semibold text-white transition hover:bg-red-500 disabled:bg-neutral-700 disabled:cursor-not-allowed"
-      >
-        {isLoading ? "Withdrawing..." : !walletClient ? "Connect wallet to withdraw" : "Withdraw DOT"}
-      </button>
     </div>
   );
 }

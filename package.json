@@ -7,7 +7,11 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "env:local": "node scripts/setup-env.js --local",
+    "env:westend": "node scripts/setup-env.js --westend",
+    "env:paseo": "node scripts/setup-env.js --paseo",
+    "env:status": "node scripts/setup-env.js"
   },
   "dependencies": {
     "@headlessui/react": "^2.2.9",
