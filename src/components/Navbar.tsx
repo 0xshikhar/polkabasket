@@ -29,7 +29,7 @@ export function Navbar() {
             to="/"
             className="text-lg font-semibold tracking-tight text-white no-underline transition hover:opacity-90 sm:text-xl"
           >
-            TeleBasket
+            PolkaBasket
           </Link>
 
           <div className="hidden items-center gap-1 md:flex">
@@ -37,11 +37,10 @@ export function Navbar() {
               <Link
                 key={link.path}
                 to={link.path}
-                className={`rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${
-                  isActive(link.path)
+                className={`rounded-full px-4 py-2.5 text-sm font-medium transition-colors ${isActive(link.path)
                     ? "border-b-2 border-white text-white"
                     : "text-neutral-400 hover:bg-white/5 hover:text-white"
-                }`}
+                  }`}
               >
                 {link.label}
               </Link>
@@ -76,11 +75,10 @@ export function Navbar() {
                   key={link.path}
                   to={link.path}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`rounded-xl px-4 py-3 text-sm font-medium transition-colors ${
-                    isActive(link.path)
+                  className={`rounded-xl px-4 py-3 text-sm font-medium transition-colors ${isActive(link.path)
                       ? "border-b-2 border-white text-white"
                       : "text-neutral-400 hover:bg-white/5 hover:text-white"
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </Link>

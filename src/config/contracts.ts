@@ -1,4 +1,4 @@
-export const westendAssetHub = {
+export const polkadotHubTestnet = {
   id: 420420421,
   name: "Westend Asset Hub",
   nativeCurrency: { name: "Westend DOT", symbol: "WND", decimals: 18 },
@@ -42,7 +42,7 @@ export const USE_MOCK_PVM = import.meta.env.VITE_USE_MOCK_PVM === 'true';
 
 // Contract addresses
 // For local testing with mock: deploy MockPVMEngine and update this
-export const PVM_ENGINE_ADDRESS = USE_MOCK_PVM 
+export const PVM_ENGINE_ADDRESS = USE_MOCK_PVM
   ? "0x0000000000000000000000000000000000000900" // Mock address
   : "0x0000000000000000000000000000000000000900"; // Real PVM (when deployed)
 

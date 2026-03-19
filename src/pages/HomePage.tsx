@@ -200,7 +200,7 @@ export function HomePage() {
       <footer className="border-t border-white/[0.06] py-6">
         <div className={`${CONTENT_MAX} px-4 sm:px-6 md:px-10`}>
           <p className="text-center text-xs text-neutral-500">
-            © {new Date().getFullYear()} TeleBasket · Cross-chain DeFi on Polkadot
+            © {new Date().getFullYear()} PolkaBasket · Cross-chain DeFi on Polkadot
           </p>
         </div>
       </footer>

@@ -5,19 +5,19 @@ import { HomePage } from "./pages/HomePage";
 import { BasketsPage } from "./pages/BasketsPage";
 import { BasketPage } from "./pages/BasketPage";
 import { PortfolioPage } from "./pages/PortfolioPage";
+import { PPTPage } from "./pages/PPTPage";
 
 function App() {
   return (
     <WalletProvider>
       <BrowserRouter>
-        <Layout>
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/baskets" element={<BasketsPage />} />
-          <Route path="/basket/:id" element={<BasketPage />} />
-          <Route path="/portfolio" element={<PortfolioPage />} />
+          <Route path="/" element={<Layout><HomePage /></Layout>} />
+          <Route path="/baskets" element={<Layout><BasketsPage /></Layout>} />
+          <Route path="/basket/:id" element={<Layout><BasketPage /></Layout>} />
+          <Route path="/portfolio" element={<Layout><PortfolioPage /></Layout>} />
+          <Route path="/ppt" element={<PPTPage />} />
         </Routes>
-        </Layout>
       </BrowserRouter>
     </WalletProvider>
   );
