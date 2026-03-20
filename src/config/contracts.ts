@@ -1,4 +1,7 @@
-import { defineChain } from "viem";
+import { defineChain, parseGwei, type Chain } from "viem";
+
+const DEFAULT_PASEO_GAS_PRICE_GWEI = import.meta.env.VITE_GAS_PRICE_GWEI || "1100";
+export const APP_LEGACY_GAS_PRICE = parseGwei(DEFAULT_PASEO_GAS_PRICE_GWEI);
 
 export const westendAssetHub = defineChain({
   id: 420420421,
@@ -26,8 +29,13 @@ export const polkadotHubTestnet = defineChain({
   blockExplorers: {
     default: {
       name: "Blockscout",
-      url: "https://blockscout-passet-hub.parity-testnet.parity.io",
+      url: "https://blockscout-testnet.polkadot.io",
     },
+  },
+  fees: {
+    estimateFeesPerGas: async () => ({
+      gasPrice: APP_LEGACY_GAS_PRICE,
+    }),
   },
   testnet: true,
 });
@@ -58,9 +66,58 @@ export const CHAIN_CONFIG = {
   id: Number(import.meta.env.VITE_CHAIN_ID) || 420420417,
   name: "Polkadot Hub TestNet",
   rpcUrl: import.meta.env.VITE_RPC_URL || "https://eth-rpc-testnet.polkadot.io",
-  explorerUrl: "https://blockscout-passet-hub.parity-testnet.parity.io",
+  explorerUrl: "https://blockscout-testnet.polkadot.io",
   explorerName: "Blockscout",
 };
+
+export const APP_NETWORK = (import.meta.env.VITE_NETWORK || "paseo").toLowerCase();
+
+const NETWORK_CHAINS: Record<string, Chain> = {
+  westend: westendAssetHub,
+  paseo: polkadotHubTestnet,
+};
+
+const ENV_CHAIN_ID = Number(import.meta.env.VITE_CHAIN_ID);
+const CHAIN_FROM_ENV_ID =
+  Number.isFinite(ENV_CHAIN_ID) && ENV_CHAIN_ID > 0
+    ? (Object.values(NETWORK_CHAINS).find((c) => c.id === ENV_CHAIN_ID) ?? null)
+    : null;
+
+export const APP_CHAIN =
+  CHAIN_FROM_ENV_ID ||
+  NETWORK_CHAINS[APP_NETWORK] ||
+  polkadotHubTestnet;
+export const APP_RPC_URL = import.meta.env.VITE_RPC_URL || APP_CHAIN.rpcUrls.default.http[0];
+export const APP_CHAIN_ID = APP_CHAIN.id;
+export const APP_CHAIN_NAME = APP_CHAIN.name;
+export const APP_NATIVE_SYMBOL = APP_CHAIN.nativeCurrency.symbol;
+export const APP_NATIVE_DECIMALS = APP_CHAIN.nativeCurrency.decimals;
+export const APP_EXPLORER_URL = APP_CHAIN.blockExplorers?.default.url || "";
+
+function normalizeExplorerBaseUrl(url: string) {
+  return url.replace(/\/+$/, "");
+}
+
+export function getExplorerTxUrl(txHash: string, baseUrl = APP_EXPLORER_URL): string | null {
+  if (!baseUrl) return null;
+  const base = normalizeExplorerBaseUrl(baseUrl);
+  if (base.includes("subscan.io")) return `${base}/evm/tx/${txHash}`;
+  return `${base}/tx/${txHash}`;
+}
+
+export function getExplorerExtrinsicUrl(txHash: string, baseUrl = APP_EXPLORER_URL): string | null {
+  if (!baseUrl) return null;
+  const base = normalizeExplorerBaseUrl(baseUrl);
+  if (base.includes("subscan.io")) return `${base}/extrinsic/${txHash}`;
+  return `${base}/tx/${txHash}`;
+}
+
+export function getExplorerAddressUrl(address: string, baseUrl = APP_EXPLORER_URL): string | null {
+  if (!baseUrl) return null;
+  const base = normalizeExplorerBaseUrl(baseUrl);
+  if (base.includes("subscan.io")) return `${base}/evm/address/${address}`;
+  return `${base}/address/${address}`;
+}
 
 export const USE_MOCK_PVM = import.meta.env.VITE_USE_MOCK_PVM === 'true';
 export const PVM_CODE_HASH = import.meta.env.VITE_PVM_CODE_HASH || "";
@@ -163,6 +220,41 @@ export const BASKET_MANAGER_ABI = [
     inputs: [],
     outputs: [{ name: "", type: "uint16" }],
     stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "xcmEnabled",
+    inputs: [],
+    outputs: [{ name: "", type: "bool" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "xcmPrecompile",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "pvmEngine",
+    inputs: [],
+    outputs: [{ name: "", type: "address" }],
+    stateMutability: "view",
+  },
+  {
+    type: "function",
+    name: "setXCMEnabled",
+    inputs: [{ name: "enabled", type: "bool" }],
+    outputs: [],
+    stateMutability: "nonpayable",
+  },
+  {
+    type: "function",
+    name: "setPVMEngine",
+    inputs: [{ name: "engine", type: "address" }],
+    outputs: [],
+    stateMutability: "nonpayable",
   },
   {
     type: "event",
@@ -351,7 +443,7 @@ export const RPC_URLS = {
 
 export const EXPLORER_URLS = {
   WESTEND: "https://assethub-westend.subscan.io",
-  PASEO: "https://blockscout-passet-hub.parity-testnet.parity.io",
+  PASEO: "https://blockscout-testnet.polkadot.io",
   HYDRATION: "https://hydration.subscan.io",
   MOONBASE: "https://moonbase.subscan.io",
 } as const;
