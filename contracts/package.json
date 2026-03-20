@@ -7,9 +7,16 @@
     "test": "hardhat test",
     "typechain": "hardhat typechain",
     "deploy": "hardhat --network hardhat deploy",
-    "deploy:local": "hardhat --network hardhat run scripts/deploy-ethers.ts",
-    "deploy:paseo": "hardhat --network paseo run scripts/deploy-ethers.ts",
+    "deploy:local": "hardhat --network hardhat run scripts/deploy.ts",
+    "deploy:paseo": "hardhat --network paseo run scripts/deploy.ts",
+    "redeploy:paseo": "hardhat --network paseo run scripts/redeploy.ts",
+    "deploy:westend": "hardhat --network westend run scripts/deploy.ts",
     "check:balance": "hardhat run scripts/check-balance.ts",
+    "check:basket": "hardhat --network paseo run scripts/check-basket.ts",
+    "check:xcm": "hardhat --network paseo run scripts/check-xcm.ts",
+    "health:paseo": "hardhat --network paseo run scripts/health-paseo.ts",
+    "simulate:deposit": "hardhat --network paseo run scripts/simulate-deposit.ts",
+    "disable:xcm": "hardhat --network paseo run scripts/disable-xcm.ts",
     "fund:wallet": "hardhat run scripts/fund-wallet.ts"
   },
   "devDependencies": {

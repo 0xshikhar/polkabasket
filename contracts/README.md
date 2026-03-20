@@ -1,17 +1,28 @@
+# Paseo-first contract workflow
+
+## Deploy
+
+```bash
 # Local development
+npx hardhat --network hardhat run scripts/deploy.ts
 
-npx hardhat --network hardhat deploy
+# Paseo (default target)
+npx hardhat --network paseo run scripts/deploy.ts
 
-# Testnet (Paseo)
+# Westend (optional)
+npx hardhat --network westend run scripts/deploy.ts
+```
 
-npx hardhat --network paseoAssetHub deploy
+## Useful npm scripts (run from `contracts/`)
 
-# Testnet (Westend)
-
-npx hardhat --network westendAssetHub deploy
-
-# Or use npm scripts (require PRIVATE_KEY env var for non-local)
-
+```bash
 npm run deploy:local
 npm run deploy:paseo
+npm run redeploy:paseo
 npm run deploy:westend
+npm run health:paseo
+npm run check:basket
+npm run check:xcm
+npm run simulate:deposit
+npm run disable:xcm
+```

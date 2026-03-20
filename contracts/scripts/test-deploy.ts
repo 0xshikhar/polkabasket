@@ -1,4 +1,5 @@
 import { ethers, network } from "hardhat";
+import "dotenv/config";
 
 const XCM_PRECOMPILE_ADDRESS = "0x0000000000000000000000000000000000000800";
 const PVM_ENGINE_ADDRESS = "0x0000000000000000000000000000000000000900";
@@ -11,7 +12,7 @@ async function main() {
     process.exit(1);
   }
 
-  const provider = new ethers.JsonRpcProvider("https://westend-asset-hub-eth-rpc.polkadot.io");
+  const provider = new ethers.JsonRpcProvider(process.env.LOCAL_RPC_URL || "http://127.0.0.1:8545");
   const wallet = new ethers.Wallet(privateKey, provider);
   
   console.log("Deploying with:", wallet.address);
