@@ -17,7 +17,11 @@
     "health:paseo": "hardhat --network paseo run scripts/health-paseo.ts",
     "simulate:deposit": "hardhat --network paseo run scripts/simulate-deposit.ts",
     "disable:xcm": "hardhat --network paseo run scripts/disable-xcm.ts",
-    "fund:wallet": "hardhat run scripts/fund-wallet.ts"
+    "fund:wallet": "hardhat run scripts/fund-wallet.ts",
+    "fund:sovereign": "hardhat --network paseo run scripts/fund-sovereign.ts",
+    "deploy:xcm-precompile": "hardhat --network paseo run scripts/deploy-xcm-precompile.ts",
+    "verify:sovereign": "hardhat --network paseo run scripts/verify-sovereign.ts",
+    "verify:xcm": "hardhat --network paseo run scripts/verify-xcm.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
