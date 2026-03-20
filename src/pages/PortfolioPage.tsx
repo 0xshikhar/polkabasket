@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import { APP_NATIVE_SYMBOL } from "../config/contracts";
 
 interface Position {
   id: bigint;
@@ -99,7 +100,7 @@ export function PortfolioPage() {
                           <p className="text-sm text-neutral-400">{position.symbol}</p>
                         </div>
                       </td>
-                      <td className="px-6 py-4 text-right text-white">{position.deposited} DOT</td>
+                      <td className="px-6 py-4 text-right text-white">{position.deposited} {APP_NATIVE_SYMBOL}</td>
                       <td className="px-6 py-4 text-right text-white">{position.tokens}</td>
                       <td className="px-6 py-4 text-right font-medium text-white">${position.value}</td>
                       <td className="px-6 py-4 text-right">
@@ -139,8 +140,8 @@ export function PortfolioPage() {
                 </thead>
                 <tbody>
                   {[
-                    { type: "Deposit", basket: "xDOT-LIQ", amount: "50.00 DOT", status: "Confirmed", time: "2 hours ago" },
-                    { type: "Deposit", basket: "xDOT-LIQ", amount: "50.00 DOT", status: "Confirmed", time: "1 day ago" },
+                    { type: "Deposit", basket: "xDOT-LIQ", amount: `50.00 ${APP_NATIVE_SYMBOL}`, status: "Confirmed", time: "2 hours ago" },
+                    { type: "Deposit", basket: "xDOT-LIQ", amount: `50.00 ${APP_NATIVE_SYMBOL}`, status: "Confirmed", time: "1 day ago" },
                     { type: "Rebalance", basket: "xDOT-LIQ", amount: "-", status: "Confirmed", time: "3 days ago" },
                   ].map((tx, i) => (
                     <tr key={i} className="border-t border-white/5">

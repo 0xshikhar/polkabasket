@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import PixelBlast from "../components/PixelBlast";
+import { APP_NATIVE_SYMBOL } from "../config/contracts";
 
 const SECTION_PADDING = "px-4 py-16 sm:px-6 sm:py-20 md:px-10 md:py-24 lg:py-28";
 const CONTENT_MAX = "mx-auto max-w-7xl";
@@ -60,7 +61,7 @@ export function HomePage() {
             Baskets in one click
           </h1>
           <p className="landing-section landing-stagger-3 mt-5 max-w-xl text-base leading-relaxed text-neutral-400 sm:mt-6 sm:text-lg md:text-xl">
-            Deposit DOT once. Get automatic allocation across parachains via XCM. One unified basket token—yield from multiple chains.
+            Deposit {APP_NATIVE_SYMBOL} once. Get automatic allocation across parachains via XCM. One unified basket token-yield from multiple chains.
           </p>
           <div className="landing-section landing-stagger-4 mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
             <Link
@@ -132,7 +133,7 @@ export function HomePage() {
               across chains
             </h2>
             <p className="mt-5 max-w-xl text-base leading-relaxed text-neutral-400 sm:text-lg md:text-xl">
-              One deposit, one basket token. XCM handles the rest—your DOT is allocated across Hydration, Moonbeam, Acala and more.
+              One deposit, one basket token. XCM handles the rest-your {APP_NATIVE_SYMBOL} is allocated across Hydration, Moonbeam, Acala and more.
             </p>
           </div>
 
@@ -140,9 +141,9 @@ export function HomePage() {
             {[
               {
                 step: "1",
-                title: "Deposit DOT",
+                title: `Deposit ${APP_NATIVE_SYMBOL}`,
                 description:
-                  "Deposit your DOT into any basket. You receive basket tokens representing your share of the portfolio.",
+                  `Deposit your ${APP_NATIVE_SYMBOL} into any basket. You receive basket tokens representing your share of the portfolio.`,
                 icon: (
                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />

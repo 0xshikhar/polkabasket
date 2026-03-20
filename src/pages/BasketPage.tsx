@@ -1,9 +1,12 @@
 import { useState, useEffect } from "react";
 import { useParams, Link } from "react-router-dom";
+import { formatUnits } from "viem";
 import { DepositForm } from "../components/DepositForm";
 import { WithdrawForm } from "../components/WithdrawForm";
 import { useBasketManager, type BasketInfo } from "../hooks/useBasketManager";
-import { EXPLORER_URLS, BASKET_MANAGER_ADDRESS, PVM_ENGINE_ADDRESS, USE_MOCK_PVM } from "../config/contracts";
+import { useBasketToken } from "../hooks/useBasketToken";
+import { useWalletAddress } from "../contexts/WalletContext";
+import { APP_EXPLORER_URL, APP_NATIVE_DECIMALS, APP_NATIVE_SYMBOL, BASKET_MANAGER_ADDRESS, PVM_ENGINE_ADDRESS, USE_MOCK_PVM, getExplorerAddressUrl } from "../config/contracts";
 
 interface Allocation {
   chain: string;
@@ -38,9 +41,12 @@ export function BasketPage() {
   const [activeTab, setActiveTab] = useState<"deposit" | "withdraw">("deposit");
   const [basketInfo, setBasketInfo] = useState<BasketInfo | null>(null);
   const [basketData, setBasketData] = useState(DEFAULT_BASKET_DATA);
-  const [userBalance] = useState("0");
-  const [userDeposit] = useState("0");
+  const [userBalance, setUserBalance] = useState("0");
+  const [userDeposit, setUserDeposit] = useState("0");
   const [isLoadingBasket, setIsLoadingBasket] = useState(true);
+  const walletAddress = useWalletAddress();
+  const tokenAddress = basketInfo?.token ? (basketInfo.token as `0x${string}`) : null;
+  const { getBalance } = useBasketToken(tokenAddress);
 
   useEffect(() => {
     async function fetchBasket() {
@@ -71,13 +77,49 @@ export function BasketPage() {
     fetchBasket();
   }, [id, basketId, getBasketInfo]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    async function fetchUserTokenBalance() {
+      if (!walletAddress || !tokenAddress) {
+        if (!cancelled) {
+          setUserBalance("0");
+          setUserDeposit("0");
+        }
+        return;
+      }
+
+      try {
+        const balance = await getBalance(walletAddress);
+        const formatted = formatUnits(balance, APP_NATIVE_DECIMALS);
+        const parsed = Number.parseFloat(formatted);
+        const display = Number.isFinite(parsed) && parsed > 0 ? parsed.toFixed(4).replace(/\.?0+$/, "") : "0";
+        if (!cancelled) {
+          setUserBalance(display);
+          setUserDeposit(display);
+        }
+      } catch {
+        if (!cancelled) {
+          setUserBalance("0");
+          setUserDeposit("0");
+        }
+      }
+    }
+
+    fetchUserTokenBalance();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [walletAddress, tokenAddress, getBalance]);
+
   const riskColors = {
     Low: "bg-emerald-500/20 text-emerald-400",
     Medium: "bg-amber-500/20 text-amber-400",
     High: "bg-red-500/20 text-red-400",
   };
 
-  const explorerUrl = EXPLORER_URLS.PASEO;
+  const explorerUrl = APP_EXPLORER_URL;
 
   return (
     <div className="min-h-screen bg-neutral-950 pt-20">
@@ -122,12 +164,12 @@ export function BasketPage() {
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4">
                   <p className="text-neutral-400 text-sm">TVL</p>
                   <p className="text-2xl font-bold text-white">
-                    {basketInfo?.totalDeposited ? `${parseFloat(basketInfo.totalDeposited).toFixed(2)} DOT` : "$1.25M"}
+                    {basketInfo?.totalDeposited ? `${parseFloat(basketInfo.totalDeposited).toFixed(2)} ${APP_NATIVE_SYMBOL}` : "$1.25M"}
                   </p>
                 </div>
                 <div className="rounded-xl border border-white/5 bg-white/5 p-4">
                   <p className="text-neutral-400 text-sm">Token Price</p>
-                  <p className="text-2xl font-bold text-white">1.00 DOT</p>
+                  <p className="text-2xl font-bold text-white">1.00 {APP_NATIVE_SYMBOL}</p>
                 </div>
               </div>
 
@@ -300,7 +342,7 @@ function UserPositionCard({ userDeposit, tokenSymbol }: { userDeposit: string; t
       <div className="space-y-4">
         <div>
           <p className="text-neutral-400 text-sm">Deposited</p>
-          <p className="text-2xl font-bold text-white">{userDeposit || "0.00"} DOT</p>
+          <p className="text-2xl font-bold text-white">{userDeposit || "0.00"} {APP_NATIVE_SYMBOL}</p>
         </div>
         <div>
           <p className="text-neutral-400 text-sm">Token Balance</p>
@@ -365,7 +407,7 @@ function ContractStatusCard({
             </div>
             {contract.address && (
               <a
-                href={`${explorerUrl}/address/${contract.address}`}
+                href={getExplorerAddressUrl(contract.address, explorerUrl) || "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-blue-400 text-xs hover:underline font-mono"

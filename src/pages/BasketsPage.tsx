@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { useBasketManager } from "../hooks/useBasketManager";
-import { formatEther } from "viem";
+import { formatUnits } from "viem";
+import { APP_NATIVE_DECIMALS, APP_NATIVE_SYMBOL } from "../config/contracts";
 
 interface BasketPreview {
   id: bigint;
@@ -76,7 +77,7 @@ export function BasketsPage() {
             Available Baskets
           </h1>
           <p className="mx-auto mt-6 max-w-2xl text-lg leading-relaxed text-neutral-400 sm:text-xl">
-            Choose a basket. Deposit DOT. Your capital is automatically deployed across parachains via XCM.
+            Choose a basket. Deposit {APP_NATIVE_SYMBOL}. Your capital is automatically deployed across parachains via XCM.
           </p>
         </div>
 
@@ -120,7 +121,7 @@ function BasketCard({ basket }: { basket: BasketPreview }) {
         </div>
 
         <p className="text-2xl font-bold text-white">
-          {Number(formatEther(basket.totalDeposited)).toLocaleString()} DOT
+          {Number(formatUnits(basket.totalDeposited, APP_NATIVE_DECIMALS)).toLocaleString()} {APP_NATIVE_SYMBOL}
         </p>
         <p className="text-sm text-neutral-500">TVL</p>
 
