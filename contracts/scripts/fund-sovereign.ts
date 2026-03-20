@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { createHash } from "crypto";
+import "dotenv/config";
 
 const HUB_PARA_ID = 1000;
 const FUND_AMOUNT_ETHER = "2";
@@ -12,20 +12,15 @@ const PARACHAINS = {
 
 function deriveSovereignAccount(contractAddress: string, paraId: number): string {
   const siblingContext = "SiblingChain";
-  const paraIdBytes = Buffer.alloc(4);
-  paraIdBytes.writeUInt32BE(HUB_PARA_ID, 0);
   const accountKey20 = "AccountKey20";
-  const contractBytes = Buffer.from(contractAddress.slice(2), "hex");
-
-  const data = Buffer.concat([
-    Buffer.from(siblingContext),
-    paraIdBytes,
-    Buffer.from(accountKey20),
-    contractBytes,
-  ]);
-
-  const hash = createHash("blake2b256").update(data).digest();
-  return "0x" + hash.toString("hex");
+  
+  const data = ethers.solidityPacked(
+    ["string", "uint32", "string", "address"],
+    [siblingContext, HUB_PARA_ID, accountKey20, contractAddress]
+  );
+  
+  const hash = ethers.keccak256(ethers.toUtf8Bytes(data));
+  return hash;
 }
 
 async function main() {

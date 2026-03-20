@@ -1,5 +1,5 @@
 import { ethers, network } from "hardhat";
-import { createHash } from "crypto";
+import "dotenv/config";
 
 const HUB_PARA_ID = 1000;
 
@@ -26,20 +26,15 @@ const PARACHAINS: Record<string, { id: number; name: string; minBalance: string;
 
 function deriveSovereignAccount(contractAddress: string, paraId: number): string {
   const siblingContext = "SiblingChain";
-  const paraIdBytes = Buffer.alloc(4);
-  paraIdBytes.writeUInt32BE(HUB_PARA_ID, 0);
   const accountKey20 = "AccountKey20";
-  const contractBytes = Buffer.from(contractAddress.slice(2), "hex");
-
-  const data = Buffer.concat([
-    Buffer.from(siblingContext),
-    paraIdBytes,
-    Buffer.from(accountKey20),
-    contractBytes,
-  ]);
-
-  const hash = createHash("blake2b256").update(data).digest();
-  return "0x" + hash.toString("hex");
+  
+  const data = ethers.solidityPacked(
+    ["string", "uint32", "string", "address"],
+    [siblingContext, HUB_PARA_ID, accountKey20, contractAddress]
+  );
+  
+  const hash = ethers.keccak256(ethers.toUtf8Bytes(data));
+  return hash;
 }
 
 async function checkBalance(address: string, chain: string): Promise<{ balance: bigint; formatted: string }> {
@@ -73,43 +68,36 @@ async function main() {
   console.log("\n" + "-".repeat(70));
   console.log("Sovereign Accounts");
   console.log("-".repeat(70));
+  console.log("\nNote: Sovereign accounts are on remote chains (Hydration, Moonbeam, Acala)");
+  console.log("      Check balances using the explorer links below.\n");
 
-  const accounts: Record<string, { address: string; balance: string; status: string; needsFunding: boolean }> = {};
+  const accounts: Record<string, { address: string; status: string }> = {};
 
   for (const [name, chain] of Object.entries(PARACHAINS)) {
     const sovereignAddress = deriveSovereignAccount(basketManagerAddress, chain.id);
-    const { formatted: balance, balance: balanceBn } = await checkBalance(sovereignAddress, name);
-    const minBalance = ethers.parseEther(chain.minBalance);
-    const needsFunding = balanceBn < minBalance;
 
     accounts[name] = {
       address: sovereignAddress,
-      balance,
-      status: needsFunding ? "NEEDS FUNDING" : "OK",
-      needsFunding,
+      status: "Check explorer",
     };
 
-    const statusColor = needsFunding ? "\x1b[33m" : "\x1b[32m";
-    const reset = "\x1b[0m";
-
-    console.log(`\n${name} (Para ${chain.id}):`);
-    console.log(`  Address:     ${sovereignAddress}`);
-    console.log(`  Balance:     ${balance} PAS`);
-    console.log(`  Min Required: ${chain.minBalance} PAS`);
-    console.log(`  Status:       ${statusColor}${accounts[name].status}${reset}`);
-    console.log(`  Explorer:     ${chain.explorer}/account/${sovereignAddress}`);
+    console.log(`${name} (Para ${chain.id}):`);
+    console.log(`  Address:   ${sovereignAddress}`);
+    console.log(`  Check at:  ${chain.explorer}/account/${sovereignAddress}`);
+    console.log("");
   }
 
   console.log("\n" + "-".repeat(70));
   console.log("XCM Precompile Status");
   console.log("-".repeat(70));
 
-  const xcmPrecompile = "0x0000000000000000000000000000000000000800";
+  const xcmPrecompile = "0x00000000000000000000000000000000000a0000";
   const xcmCode = await ethers.provider.getCode(xcmPrecompile);
   const hasXCM = xcmCode && xcmCode !== "0x";
 
   console.log("\nXCM Precompile:", xcmPrecompile);
   console.log("Status:", hasXCM ? "\x1b[32mDEPLOYED\x1b[0m" : "\x1b[31mNOT DEPLOYED\x1b[0m");
+  console.log("Note: This is Polkadot's standard XCM precompile address");
   if (hasXCM) {
     console.log("Code size:", xcmCode.length, "bytes");
   }
@@ -143,7 +131,7 @@ async function main() {
         console.log(`      Deposited: ${ethers.formatEther(basket.totalDeposited)} PAS`);
         console.log(`      Allocations: ${basket.allocations.length}`);
         for (const alloc of basket.allocations) {
-          console.log(`        - Para ${alloc.paraId}: ${alloc.weightBps / 100}%`);
+          console.log(`        - Para ${alloc.paraId}: ${Number(alloc.weightBps) / 100}%`);
         }
       }
     }
@@ -153,28 +141,16 @@ async function main() {
   console.log("Summary");
   console.log("-".repeat(70));
 
-  const allFunded = Object.values(accounts).every((a) => !a.needsFunding);
-  const readyForXCM = hasXCM && allFunded;
+  console.log("\n\x1b[33m⚠ SOVEREIGN ACCOUNTS NEED MANUAL FUNDING\x1b[0m");
+  console.log("  These accounts are on remote chains - fund via cross-chain transfer");
+  console.log("  or through each chain's faucet/transfer UI.\n");
 
-  if (readyForXCM) {
-    console.log("\n\x1b[32m✓ READY FOR MULTICHAIN OPERATIONS\x1b[0m");
-    console.log("  - All sovereign accounts funded");
-    console.log("  - XCM precompile deployed");
+  if (!hasXCM) {
+    console.log("\x1b[31m✗ XCM precompile not deployed at standard address\x1b[0m");
+    console.log("  Note: On Paseo, the precompile may be pre-deployed by the network.");
+    console.log("  Check with network documentation for precompile status.");
   } else {
-    console.log("\n\x1b[33m⚠ NOT READY FOR MULTICHAIN OPERATIONS\x1b[0m");
-
-    if (!hasXCM) {
-      console.log("  - Deploy XCM precompile: npm run deploy:xcm-precompile");
-    }
-
-    const unfunded = Object.entries(accounts)
-      .filter(([, a]) => a.needsFunding)
-      .map(([name]) => name);
-
-    if (unfunded.length > 0) {
-      console.log(`  - Fund sovereign accounts: npm run fund:sovereign`);
-      console.log(`    Missing: ${unfunded.join(", ")}`);
-    }
+    console.log("\x1b[32m✓ XCM precompile available\x1b[0m");
   }
 
   console.log("\n" + "=".repeat(70));
@@ -193,8 +169,10 @@ async function main() {
   console.log("4. Enable XCM:");
   console.log("   await basketManager.setXCMEnabled(true)\n");
 
-  if (!readyForXCM) {
-    process.exit(1);
+  console.log("5. Check sovereign balances on explorers:");
+  for (const [name, chain] of Object.entries(PARACHAINS)) {
+    const sovereign = deriveSovereignAccount(basketManagerAddress, chain.id);
+    console.log(`   ${name}: ${chain.explorer}/account/${sovereign}`);
   }
 }
 

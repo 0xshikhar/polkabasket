@@ -4,13 +4,21 @@ import "@nomicfoundation/hardhat-chai-matchers";
 import "dotenv/config";
 
 const privateKey = process.env.PRIVATE_KEY || "";
-const rpcUrl = process.env.RPC_URL || process.env.PASEO_RPC_URL || "https://eth-rpc-testnet.polkadot.io";
+const rpcUrl = process.env.VITE_RPC_URL || "https://eth-rpc-testnet.polkadot.io";
 const legacyGasPrice = 1_000_000_000_000; // 1000 Gwei in wei (number)
 
 const accounts = /^0x[0-9a-fA-F]{64}$/.test(privateKey) ? [privateKey] : [];
 
 const config: HardhatUserConfig = {
-  solidity: "0.8.20",
+  solidity: {
+    version: "0.8.20",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   networks: {
     hardhat: {
       allowUnlimitedContractSize: true,
