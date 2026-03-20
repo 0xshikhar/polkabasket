@@ -1,13 +1,123 @@
 import { useCallback, useState } from "react";
-import { createPublicClient, http, parseEther, formatEther } from "viem";
-import { polkadotHubTestnet, BASKET_MANAGER_ADDRESS, BASKET_MANAGER_ABI } from "../config/contracts";
-
-const RPC_URL = import.meta.env.VITE_RPC_URL || "https://eth-rpc-testnet.polkadot.io";
+import { createPublicClient, http, parseUnits, formatUnits } from "viem";
+import {
+  APP_CHAIN,
+  APP_LEGACY_GAS_PRICE,
+  APP_NATIVE_DECIMALS,
+  APP_RPC_URL,
+  BASKET_MANAGER_ADDRESS,
+  BASKET_MANAGER_ABI,
+} from "../config/contracts";
 
 const publicClient = createPublicClient({
-  chain: polkadotHubTestnet,
-  transport: http(RPC_URL),
+  chain: APP_CHAIN,
+  transport: http(APP_RPC_URL),
 });
+
+async function assertContractDeployed(address: `0x${string}`) {
+  const bytecode = await publicClient.getBytecode({ address });
+  if (!bytecode || bytecode === "0x") {
+    throw new Error(`BasketManager is not deployed on ${APP_CHAIN.name} (chainId ${APP_CHAIN.id}). Check your network/RPC and contract address.`);
+  }
+}
+
+const XCM_PRECOMPILE_FALLBACK = "0x0000000000000000000000000000000000000800" as const;
+
+async function waitForReceipt(hash: `0x${string}`, timeoutMs = 60_000) {
+  const start = Date.now();
+  while (Date.now() - start < timeoutMs) {
+    try {
+      const receipt = await publicClient.getTransactionReceipt({ hash });
+      if (receipt.status === "reverted") {
+        throw new Error("Transaction reverted on-chain");
+      }
+      return receipt;
+    } catch (err) {
+      if (err instanceof Error && err.message === "Transaction reverted on-chain") {
+        throw err;
+      }
+      await new Promise((resolve) => setTimeout(resolve, 2_000));
+    }
+  }
+  throw new Error("Timed out waiting for transaction receipt");
+}
+
+function normalizeErrorMessage(err: unknown, fallback: string): string {
+  if (typeof err === "object" && err !== null) {
+    const maybeShort = (err as { shortMessage?: string }).shortMessage;
+    if (maybeShort) return maybeShort;
+    const maybeMessage = (err as { message?: string }).message;
+    if (maybeMessage) return maybeMessage;
+  }
+  return fallback;
+}
+
+async function assertBasketReady(basketId: bigint) {
+  if (!BASKET_MANAGER_ADDRESS) throw new Error("BasketManager address not configured");
+  await assertContractDeployed(BASKET_MANAGER_ADDRESS as `0x${string}`);
+
+  const nextId = await publicClient.readContract({
+    address: BASKET_MANAGER_ADDRESS,
+    abi: BASKET_MANAGER_ABI,
+    functionName: "nextBasketId",
+  });
+
+  if (basketId >= nextId) {
+    throw new Error(`Basket ${basketId.toString()} does not exist. nextBasketId is ${nextId.toString()}.`);
+  }
+
+  const basket = await publicClient.readContract({
+    address: BASKET_MANAGER_ADDRESS,
+    abi: BASKET_MANAGER_ABI,
+    functionName: "getBasket",
+    args: [basketId],
+  }) as unknown as Basket;
+
+  if (!basket.active) {
+    throw new Error(`Basket ${basketId.toString()} is not active.`);
+  }
+}
+
+async function getXcmReadiness() {
+  try {
+    const xcmEnabled = await publicClient.readContract({
+      address: BASKET_MANAGER_ADDRESS as `0x${string}`,
+      abi: BASKET_MANAGER_ABI,
+      functionName: "xcmEnabled",
+    });
+    const xcmAddress = await publicClient.readContract({
+      address: BASKET_MANAGER_ADDRESS as `0x${string}`,
+      abi: BASKET_MANAGER_ABI,
+      functionName: "xcmPrecompile",
+    });
+    const bytecode = await publicClient.getBytecode({ address: xcmAddress as `0x${string}` });
+    return {
+      xcmEnabled: Boolean(xcmEnabled),
+      xcmPrecompile: xcmAddress as `0x${string}`,
+      hasCode: Boolean(bytecode && bytecode !== "0x"),
+    };
+  } catch {
+    const bytecode = await publicClient.getBytecode({ address: XCM_PRECOMPILE_FALLBACK });
+    return {
+      xcmEnabled: undefined,
+      xcmPrecompile: XCM_PRECOMPILE_FALLBACK as `0x${string}`,
+      hasCode: Boolean(bytecode && bytecode !== "0x"),
+    };
+  }
+}
+
+async function writeLegacyContract(
+  walletClient: unknown,
+  request: Record<string, unknown>
+): Promise<`0x${string}`> {
+  const wc = walletClient as { writeContract: (params: unknown) => Promise<`0x${string}`> };
+  const { maxFeePerGas, maxPriorityFeePerGas, ...legacyRequest } = request;
+  return wc.writeContract({
+    ...legacyRequest,
+    type: "legacy",
+    gasPrice: APP_LEGACY_GAS_PRICE,
+  });
+}
 
 export interface Allocation {
   paraId: number;
@@ -85,7 +195,7 @@ export function useBasketManager() {
         name: basket.name,
         symbol: basket.name.replace(" Basket", "").toUpperCase(),
         token: basket.token,
-        totalDeposited: formatEther(basket.totalDeposited),
+        totalDeposited: formatUnits(basket.totalDeposited, APP_NATIVE_DECIMALS),
         allocations: basket.allocations.map((a) => ({
           paraId: Number(a.paraId),
           chain: chainNames[Number(a.paraId)] || `Para ${a.paraId}`,
@@ -114,7 +224,7 @@ export function useBasketManager() {
     }
   }, []);
 
-  const deposit = useCallback(async (walletClient: unknown, basketId: bigint, amountDOT: number) => {
+  const deposit = useCallback(async (walletClient: unknown, basketId: bigint, amountDOT: string | number) => {
     setIsLoading(true);
     setError(null);
     try {
@@ -123,21 +233,35 @@ export function useBasketManager() {
       if (!account) {
         throw new Error("No account available");
       }
-      const hash = await wc.writeContract({
+      await assertBasketReady(basketId);
+      const normalizedAmount = typeof amountDOT === "number" ? amountDOT.toString() : amountDOT;
+      const value = parseUnits(normalizedAmount, APP_NATIVE_DECIMALS);
+      const { request } = await publicClient.simulateContract({
         address: BASKET_MANAGER_ADDRESS,
         abi: BASKET_MANAGER_ABI,
         functionName: "deposit",
         args: [basketId],
-        value: parseEther(amountDOT.toString()),
-        chain: polkadotHubTestnet,
+        value,
+        gasPrice: APP_LEGACY_GAS_PRICE,
+        chain: APP_CHAIN,
         account,
       });
-      await publicClient.waitForTransactionReceipt({ hash });
+
+      const hash = await writeLegacyContract(walletClient, request as Record<string, unknown>);
+      await waitForReceipt(hash);
       return hash;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Deposit failed";
+      let errorMessage = normalizeErrorMessage(err, "Deposit failed");
+      if (errorMessage.toLowerCase().includes("execution reverted")) {
+        const readiness = await getXcmReadiness();
+        if (readiness.xcmEnabled === true && !readiness.hasCode) {
+          errorMessage = `Deposit reverted because XCM is enabled but precompile ${readiness.xcmPrecompile} has no code on ${APP_CHAIN.name}. Disable XCM as owner (setXCMEnabled(false)) or redeploy the latest BasketManager.`;
+        } else if (readiness.xcmEnabled === undefined && !readiness.hasCode) {
+          errorMessage = `Deposit reverted on-chain. XCM precompile ${readiness.xcmPrecompile} has no code on ${APP_CHAIN.name}; your deployed BasketManager likely still hard-requires XCM during deposit.`;
+        }
+      }
       setError(errorMessage);
-      throw err;
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -152,20 +276,24 @@ export function useBasketManager() {
       if (!account) {
         throw new Error("No account available");
       }
-      const hash = await wc.writeContract({
+      await assertBasketReady(basketId);
+      const { request } = await publicClient.simulateContract({
         address: BASKET_MANAGER_ADDRESS,
         abi: BASKET_MANAGER_ABI,
         functionName: "withdraw",
         args: [basketId, tokenAmount],
-        chain: polkadotHubTestnet,
+        gasPrice: APP_LEGACY_GAS_PRICE,
+        chain: APP_CHAIN,
         account,
       });
-      await publicClient.waitForTransactionReceipt({ hash });
+
+      const hash = await writeLegacyContract(walletClient, request as Record<string, unknown>);
+      await waitForReceipt(hash);
       return hash;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Withdraw failed";
+      const errorMessage = normalizeErrorMessage(err, "Withdraw failed");
       setError(errorMessage);
-      throw err;
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -180,20 +308,24 @@ export function useBasketManager() {
       if (!account) {
         throw new Error("No account available");
       }
-      const hash = await wc.writeContract({
+      await assertBasketReady(basketId);
+      const { request } = await publicClient.simulateContract({
         address: BASKET_MANAGER_ADDRESS,
         abi: BASKET_MANAGER_ABI,
         functionName: "rebalance",
         args: [basketId],
-        chain: polkadotHubTestnet,
+        gasPrice: APP_LEGACY_GAS_PRICE,
+        chain: APP_CHAIN,
         account,
       });
-      await publicClient.waitForTransactionReceipt({ hash });
+
+      const hash = await writeLegacyContract(walletClient, request as Record<string, unknown>);
+      await waitForReceipt(hash);
       return hash;
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Rebalance failed";
+      const errorMessage = normalizeErrorMessage(err, "Rebalance failed");
       setError(errorMessage);
-      throw err;
+      throw new Error(errorMessage);
     } finally {
       setIsLoading(false);
     }
