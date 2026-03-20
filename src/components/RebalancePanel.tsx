@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useBasketManager } from "../hooks/useBasketManager";
 import { useWallet, useWalletClient } from "../contexts/WalletContext";
+import { getExplorerExtrinsicUrl } from "../config/contracts";
 import type { WalletClient } from "viem";
 
 interface RebalancePanelProps {
@@ -97,7 +98,7 @@ export function RebalancePanel({
         <div className="bg-emerald-500/10 border border-emerald-500/20 rounded p-3 mb-4">
           <p className="text-emerald-400 text-sm mb-1">Rebalance successful!</p>
           <a
-            href={`https://assethub-westend.subscan.io/extrinsic/${txHash}`}
+            href={getExplorerExtrinsicUrl(txHash) || "#"}
             target="_blank"
             rel="noopener noreferrer"
             className="text-emerald-400 text-xs hover:underline"

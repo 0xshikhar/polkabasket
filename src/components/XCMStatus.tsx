@@ -1,3 +1,5 @@
+import { APP_EXPLORER_URL, APP_NATIVE_SYMBOL } from "../config/contracts";
+
 export interface XCMMessage {
   id: string;
   fromChain: string;
@@ -41,14 +43,14 @@ export function XCMStatus({ messages, onClear }: XCMStatusProps) {
     if (msg.explorerUrl) return msg.explorerUrl;
     if (msg.paraId) {
       const explorers: Record<number, string> = {
-        1000: "https://assethub-westend.subscan.io",
+        1000: APP_EXPLORER_URL,
         2034: "https://hydration.subscan.io",
         2004: "https://moonbase.subscan.io",
         2000: "https://acala.subscan.io",
       };
       return explorers[msg.paraId];
     }
-    return "https://assethub-westend.subscan.io";
+    return APP_EXPLORER_URL;
   };
 
   const pendingCount = messages.filter(m => m.status === "pending").length;
@@ -95,7 +97,7 @@ export function XCMStatus({ messages, onClear }: XCMStatusProps) {
                     {msg.fromChain} → {msg.toChain}
                   </p>
                   <p className="text-gray-400 text-xs">
-                    {msg.amount} DOT
+                    {msg.amount} {APP_NATIVE_SYMBOL}
                     {msg.paraId && ` • Para ${msg.paraId}`}
                   </p>
                 </div>

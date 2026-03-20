@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { useBasketManager } from "../hooks/useBasketManager";
 import { useWallet, useWalletClient } from "../contexts/WalletContext";
-import { PARACHAINS, EXPLORER_URLS } from "../config/contracts";
+import { APP_CHAIN_ID, APP_CHAIN_NAME, APP_NATIVE_SYMBOL, PARACHAINS, getExplorerTxUrl } from "../config/contracts";
 import type { WalletClient } from "viem";
 
 interface DepositFormProps {
@@ -13,8 +13,7 @@ interface DepositFormProps {
 const CHAIN_NAMES: Record<number, string> = {
   11155111: "Sepolia",
   1: "Ethereum",
-  420420417: "Polkadot Hub TestNet",
-  420420421: "Westend Asset Hub",
+  [APP_CHAIN_ID]: APP_CHAIN_NAME,
 };
 
 export function DepositForm({ 
@@ -43,7 +42,7 @@ export function DepositForm({
     try {
       await switchChain();
     } catch {
-      setLocalError(`Please manually switch to Polkadot Hub TestNet (Chain ID: ${targetChainId})`);
+      setLocalError(`Please manually switch to ${APP_CHAIN_NAME} (Chain ID: ${targetChainId})`);
     } finally {
       setSwitchingChain(false);
     }
@@ -53,7 +52,7 @@ export function DepositForm({
     if (!amount || parseFloat(amount) <= 0 || !walletClient) return;
     
     if (!isCorrectChain) {
-      setLocalError("Please switch to Polkadot Hub TestNet first");
+      setLocalError(`Please switch to ${APP_CHAIN_NAME} first`);
       return;
     }
     
@@ -65,7 +64,7 @@ export function DepositForm({
       const hash = await deposit(
         walletClient as WalletClient,
         basketId,
-        parseFloat(amount)
+        amount
       );
       setTxHash(hash);
       setTxStatus("success");
@@ -74,7 +73,7 @@ export function DepositForm({
       console.error("Deposit error:", err);
       const errMsg = err instanceof Error ? err.message : "Deposit failed";
       if (errMsg.includes("chain") || errMsg.includes("Chain")) {
-        setLocalError(`Wrong network! Please switch to Polkadot Hub TestNet (ID: ${targetChainId})`);
+        setLocalError(`Wrong network! Please switch to ${APP_CHAIN_NAME} (ID: ${targetChainId})`);
       } else {
         setTxStatus("error");
       }
@@ -82,14 +81,14 @@ export function DepositForm({
   }, [amount, basketId, walletClient, deposit, isCorrectChain, targetChainId]);
 
   const isValidAmount = amount && parseFloat(amount) > 0;
-  const displayError = localError || (needsSwitchChain ? `Wrong network (${CHAIN_NAMES[chainId || 0] || `Chain ${chainId}`}). Please switch to Polkadot Hub TestNet.` : null);
+  const displayError = localError || (needsSwitchChain ? `Wrong network (${CHAIN_NAMES[chainId || 0] || `Chain ${chainId}`}). Please switch to ${APP_CHAIN_NAME}.` : null);
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">
-      <h3 className="text-xl font-bold mb-4 text-white">Deposit DOT</h3>
+      <h3 className="text-xl font-bold mb-4 text-white">Deposit {APP_NATIVE_SYMBOL}</h3>
       <div className="space-y-4">
         <div>
-          <label className="block text-gray-300 mb-2">Amount (DOT)</label>
+          <label className="block text-gray-300 mb-2">Amount ({APP_NATIVE_SYMBOL})</label>
           <input
             type="number"
             value={amount}
@@ -107,11 +106,11 @@ export function DepositForm({
 
         {isValidAmount && (
           <div className="bg-gray-700 rounded p-4">
-            <p className="text-gray-300 mb-2">Your {amount} DOT will be deployed:</p>
+            <p className="text-gray-300 mb-2">Your {amount} {APP_NATIVE_SYMBOL} will be deployed:</p>
             {allocations.map((a) => (
               <div key={a.chain} className="flex justify-between text-gray-400">
                 <span>{a.chain}</span>
-                <span>{((parseFloat(amount) * a.pct) / 100).toFixed(2)} DOT</span>
+                <span>{((parseFloat(amount) * a.pct) / 100).toFixed(2)} {APP_NATIVE_SYMBOL}</span>
               </div>
             ))}
           </div>
@@ -126,7 +125,7 @@ export function DepositForm({
                 disabled={switchingChain}
                 className="px-3 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded font-medium transition-colors disabled:opacity-50"
               >
-                {switchingChain ? "Switching..." : `Switch to Polkadot Hub (${targetChainId})`}
+                {switchingChain ? "Switching..." : `Switch to ${APP_CHAIN_NAME} (${targetChainId})`}
               </button>
             )}
           </div>
@@ -142,12 +141,12 @@ export function DepositForm({
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded p-3">
             <p className="text-emerald-400 text-sm mb-1">Deposit successful!</p>
             <a
-              href={`${EXPLORER_URLS.PASEO}/tx/${txHash}`}
+              href={getExplorerTxUrl(txHash) || "#"}
               target="_blank"
               rel="noopener noreferrer"
               className="text-emerald-400 text-xs hover:underline"
             >
-              View on Blockscout ↗
+              View on Explorer ↗
             </a>
           </div>
         )}
@@ -160,7 +159,7 @@ export function DepositForm({
           {!isConnected 
             ? "Connect Wallet to Deposit" 
             : needsSwitchChain
-              ? `Switch to Polkadot Hub (${targetChainId})`
+              ? `Switch to ${APP_CHAIN_NAME} (${targetChainId})`
               : isLoading || txStatus === "pending" 
                 ? "Depositing..." 
                 : `Mint ${basketName} Token`

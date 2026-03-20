@@ -5,6 +5,7 @@ import { XCMStatus } from "./components/XCMStatus";
 import { BasketCard } from "./components/BasketCard";
 import { useBasketManager } from "./hooks/useBasketManager";
 import { useWallet } from "./contexts/WalletContext";
+import { APP_EXPLORER_URL } from "./config/contracts";
 
 interface BasketPageProps {
   basketId: bigint;
@@ -28,7 +29,7 @@ export function BasketPage({ basketId }: BasketPageProps) {
       toChain: "Hydration",
       amount: "40",
       status: "confirmed",
-      explorerUrl: "https://assethub-westend.subscan.io/",
+      explorerUrl: APP_EXPLORER_URL,
     },
     {
       id: "2",

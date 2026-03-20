@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
+import { formatUnits } from "viem";
 import { useBasketManager, Basket } from "../hooks/useBasketManager";
+import { APP_NATIVE_DECIMALS, APP_NATIVE_SYMBOL } from "../config/contracts";
 
 interface BasketCardProps {
   basketId: bigint;
@@ -42,7 +44,7 @@ export function BasketCard({ basketId }: BasketCardProps) {
       <div className="space-y-2">
         <div className="flex justify-between">
           <span className="text-gray-400">Total Deposited</span>
-          <span className="text-white font-semibold">{Number(nav) / 1e18} DOT</span>
+          <span className="text-white font-semibold">{formatUnits(nav, APP_NATIVE_DECIMALS)} {APP_NATIVE_SYMBOL}</span>
         </div>
         <div className="flex justify-between">
           <span className="text-gray-400">Basket ID</span>
