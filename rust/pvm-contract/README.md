@@ -100,7 +100,7 @@ cast send --gas-price 1100gwei --private-key $PRIVATE_KEY --json --create "$PAYL
 ```bash
 # Set environment
 export PRIVATE_KEY=0x...
-export RPC_URL=wss://westend-asset-hub-rpc.polkadot.io
+export RPC_URL=wss://paseo-rpc.parity.io
 
 # Run deploy script
 npm run deploy

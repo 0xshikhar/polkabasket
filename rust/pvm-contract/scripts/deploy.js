@@ -1,7 +1,7 @@
 import { ApiPromise, WsProvider } from "@polkadot/api";
 import { readFileSync, writeFileSync } from "fs";
 
-const RPC_URL = process.env.RPC_URL || "wss://westend-asset-hub-rpc.polkadot.io";
+const RPC_URL = process.env.RPC_URL || "wss://paseo-rpc.parity.io";
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 
 async function main() {
@@ -139,7 +139,7 @@ async function main() {
     
   } catch (error) {
     console.error("\n✗ Deployment error:", error.message);
-    console.log("\nNote: Westend Asset Hub may not yet support PVM contracts.");
+    console.log("\nNote: Use Paseo RPC for PVM deployment.");
     console.log("Check: https://status.polkadot.io/");
   }
 

@@ -34,7 +34,7 @@ foundryup
 ```bash
 # From tele-basket root
 cd ../..
-pnpm env:paseo
+npm run env:paseo
 
 # Edit .env with your private key
 nano .env
@@ -93,7 +93,7 @@ cast send --gas-price 1100gwei --private-key $PRIVATE_KEY --json --create "$PAYL
 cd rust/pvm-contract
 
 export PRIVATE_KEY=0x...
-export RPC_URL=wss://westend-asset-hub-rpc.polkadot.io
+export RPC_URL=wss://paseo-rpc.parity.io
 
 npm run deploy
 ```
@@ -122,7 +122,7 @@ Deployment successful!
 ```bash
 # From tele-basket root
 cd ../..
-pnpm env:paseo
+npm run env:paseo
 
 # Edit .env with the deployed address
 nano .env

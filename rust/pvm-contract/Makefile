@@ -2,7 +2,7 @@
 
 # RPC endpoints
 ETH_RPC_URL ?= https://eth-rpc-testnet.polkadot.io
-RPC_URL ?= wss://westend-asset-hub-rpc.polkadot.io
+RPC_URL ?= wss://paseo-rpc.parity.io
 
 # Gas settings for Polkadot Hub TestNet
 # Base fee is ~1000 gwei, so use slightly higher
