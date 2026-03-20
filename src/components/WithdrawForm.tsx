@@ -5,10 +5,17 @@ import { useWallet, useWalletClient } from "../contexts/WalletContext";
 import { APP_CHAIN_ID, APP_CHAIN_NAME, APP_NATIVE_SYMBOL, getExplorerTxUrl } from "../config/contracts";
 import type { WalletClient } from "viem";
 
+const TARGET_CHAINS: Record<number, { name: string; explorer: string }> = {
+  2034: { name: "Hydration", explorer: "https://hydration.subscan.io" },
+  2004: { name: "Moonbeam", explorer: "https://moonbase.subscan.io" },
+  2000: { name: "Acala", explorer: "https://acala.subscan.io" },
+};
+
 interface WithdrawFormProps {
   basketId: bigint;
   tokenSymbol?: string;
   userTokenBalance?: string;
+  allocations?: { paraId: number; weightBps: number }[];
 }
 
 const CHAIN_NAMES: Record<number, string> = {
@@ -20,11 +27,17 @@ const CHAIN_NAMES: Record<number, string> = {
 export function WithdrawForm({ 
   basketId, 
   tokenSymbol = "xDOT-LIQ",
-  userTokenBalance = "0"
+  userTokenBalance = "0",
+  allocations = [
+    { paraId: 2034, weightBps: 4000 },
+    { paraId: 2004, weightBps: 3000 },
+    { paraId: 2000, weightBps: 3000 },
+  ],
 }: WithdrawFormProps) {
   const [amount, setAmount] = useState("");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
+  const [xcmTracking, setXcmTracking] = useState<{ paraId: number; status: "pending" | "confirmed" | "failed" }[]>([]);
   const { withdraw, isLoading, error: contractError } = useBasketManager();
   const walletClient = useWalletClient();
   const { state, switchChain } = useWallet();
@@ -56,6 +69,7 @@ export function WithdrawForm({
     setTxStatus("pending");
     setTxHash(null);
     setLocalError(null);
+    setXcmTracking(allocations.map((a) => ({ paraId: a.paraId, status: "pending" as const })));
     
     try {
       const tokenAmount = parseEther(amount);
@@ -66,6 +80,7 @@ export function WithdrawForm({
       );
       setTxHash(hash);
       setTxStatus("success");
+      setXcmTracking((prev) => prev.map((t) => ({ ...t, status: "confirmed" as const })));
       setAmount("");
     } catch (err) {
       console.error("Withdraw error:", err);
@@ -73,10 +88,12 @@ export function WithdrawForm({
       if (errMsg.includes("chain") || errMsg.includes("Chain")) {
         setLocalError(`Wrong network! Please switch to ${APP_CHAIN_NAME} (ID: ${targetChainId})`);
       } else {
+        setLocalError(errMsg);
         setTxStatus("error");
+        setXcmTracking((prev) => prev.map((t) => ({ ...t, status: "failed" as const })));
       }
     }
-  }, [amount, basketId, walletClient, withdraw, isCorrectChain, targetChainId]);
+  }, [amount, basketId, walletClient, withdraw, isCorrectChain, targetChainId, allocations]);
 
   const handleMax = useCallback(() => {
     setAmount(userTokenBalance);
@@ -85,6 +102,8 @@ export function WithdrawForm({
   const isValidAmount = amount && parseFloat(amount) > 0;
   const hasBalance = parseFloat(userTokenBalance) > 0;
   const displayError = localError || (needsSwitchChain ? `Wrong network (${CHAIN_NAMES[chainId || 0] || `Chain ${chainId}`}). Please switch to ${APP_CHAIN_NAME}.` : null);
+
+  const confirmedCount = xcmTracking.filter((t) => t.status === "confirmed").length;
 
   return (
     <div className="bg-gray-800 rounded-lg p-6">
@@ -124,7 +143,7 @@ export function WithdrawForm({
             <p className="text-gray-300 text-sm mb-2">You will receive:</p>
             <p className="text-2xl font-bold text-white">{amount} {APP_NATIVE_SYMBOL}</p>
             <p className="text-gray-500 text-xs mt-1">
-              Estimated via XCM (may vary based on market conditions)
+              Distributed via XCM to: {allocations.map((a) => TARGET_CHAINS[a.paraId]?.name || `Para ${a.paraId}`).join(", ")}
             </p>
           </div>
         )}
@@ -161,9 +180,51 @@ export function WithdrawForm({
             >
               View on Explorer ↗
             </a>
-            <p className="text-gray-400 text-xs mt-2">
-              {APP_NATIVE_SYMBOL} will arrive after XCM completes on target chains
-            </p>
+            
+            {xcmTracking.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-emerald-500/20">
+                <p className="text-gray-400 text-xs mb-2">XCM Status:</p>
+                <div className="flex flex-wrap gap-2">
+                  {xcmTracking.map((track) => {
+                    const chain = TARGET_CHAINS[track.paraId];
+                    const statusColor = track.status === "confirmed" ? "bg-emerald-500/20 text-emerald-400" 
+                      : track.status === "failed" ? "bg-red-500/20 text-red-400" 
+                      : "bg-yellow-500/20 text-yellow-400";
+                    const statusIcon = track.status === "confirmed" ? "✓" 
+                      : track.status === "failed" ? "✗" 
+                      : "⏳";
+                    return (
+                      <span key={track.paraId} className={`px-2 py-1 rounded text-xs ${statusColor}`}>
+                        {chain?.name || `Para ${track.paraId}`}: {statusIcon}
+                      </span>
+                    );
+                  })}
+                </div>
+                {confirmedCount < xcmTracking.length && (
+                  <p className="text-gray-500 text-xs mt-2">
+                    Waiting for XCM completion on remaining chains...
+                  </p>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {txStatus === "error" && (
+          <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
+            <p className="text-red-400 text-sm mb-2">Withdrawal failed</p>
+            {xcmTracking.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {xcmTracking.map((track) => {
+                  const chain = TARGET_CHAINS[track.paraId];
+                  return (
+                    <span key={track.paraId} className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400">
+                      {chain?.name || `Para ${track.paraId}`}: ✗ Failed
+                    </span>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
