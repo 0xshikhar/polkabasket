@@ -20,7 +20,8 @@ function deriveSovereignAccount(contractAddress: string, paraId: number): string
   );
   
   const hash = ethers.keccak256(ethers.toUtf8Bytes(data));
-  return hash;
+  // Take last 20 bytes to make it a valid Ethereum address
+  return "0x" + hash.slice(26); // Remove 0x + first 24 chars (12 bytes), keep last 40 chars (20 bytes)
 }
 
 async function main() {
@@ -42,27 +43,43 @@ async function main() {
 
   const sovereignAccounts: Record<number, string> = {};
   console.log("\n=== Sovereign Accounts ===");
+  console.log("Funding sovereign accounts for XCM cross-chain operations...\n");
 
   for (const [name, paraId] of Object.entries(PARACHAINS)) {
     sovereignAccounts[paraId] = deriveSovereignAccount(basketManagerAddress, paraId);
-    const currentBalance = await ethers.provider.getBalance(sovereignAccounts[paraId]);
-    console.log(`\n${name} (Para ${paraId}):`);
+    
+    console.log(`${name} (Para ${paraId}):`);
     console.log(`  Address: ${sovereignAccounts[paraId]}`);
-    console.log(`  Balance: ${ethers.formatEther(currentBalance)} PAS`);
+    
+    // Try to get balance, but don't fail if address doesn't exist
+    let currentBalance: bigint;
+    try {
+      currentBalance = await ethers.provider.getBalance(sovereignAccounts[paraId]);
+      console.log(`  Current Balance: ${ethers.formatEther(currentBalance)} PAS`);
+    } catch {
+      currentBalance = 0n;
+      console.log(`  Current Balance: 0 PAS (new account)`);
+    }
 
     if (currentBalance < ethers.parseEther("0.5")) {
       console.log(`  Status: LOW - needs funding`);
       console.log(`  Funding with ${FUND_AMOUNT_ETHER} PAS...`);
 
-      const tx = await deployer.sendTransaction({
-        to: sovereignAccounts[paraId],
-        value: ethers.parseEther(FUND_AMOUNT_ETHER),
-      });
-      await tx.wait();
-      console.log(`  Funded! TX: ${tx.hash}`);
+      try {
+        const tx = await deployer.sendTransaction({
+          to: sovereignAccounts[paraId],
+          value: ethers.parseEther(FUND_AMOUNT_ETHER),
+          gasLimit: 100000,
+        });
+        await tx.wait();
+        console.log(`  ✅ Funded! TX: ${tx.hash}`);
+      } catch (error) {
+        console.error(`  ❌ Failed to fund:`, (error as Error).message);
+      }
     } else {
-      console.log(`  Status: OK`);
+      console.log(`  Status: ✅ OK`);
     }
+    console.log("");
   }
 
   console.log("\n=== Summary ===");

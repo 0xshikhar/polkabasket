@@ -124,6 +124,16 @@ export const PVM_CODE_HASH = import.meta.env.VITE_PVM_CODE_HASH || "";
 export const PVM_ENGINE_ADDRESS = import.meta.env.VITE_PVM_ENGINE_ADDRESS || "";
 export const BASKET_MANAGER_ADDRESS = import.meta.env.VITE_BASKET_MANAGER_ADDRESS || "";
 
+// XCM Mode Configuration
+// local: Full XCM functionality (for local development with working XCM)
+// testnet: Simulated XCM for demo purposes (Paseo testnet limitation)
+export const XCM_MODE = (import.meta.env.VITE_XCM_MODE || 
+  (APP_NETWORK === 'paseo' ? 'testnet' : 'local')
+).toLowerCase() as 'local' | 'testnet';
+
+export const IS_LOCAL_XCM = XCM_MODE === 'local';
+export const IS_TESTNET_XCM = XCM_MODE === 'testnet';
+
 export const DEFAULT_CHAINS = [PARACHAINS.HYDRA, PARACHAINS.MOONBEAM, PARACHAINS.ACALA] as const;
 
 export const ALLOCATION_CONFIG_ABI = [
@@ -300,6 +310,23 @@ export const BASKET_MANAGER_ABI = [
     inputs: [
       { name: "basketId", type: "uint256", indexed: true },
       { name: "timestamp", type: "uint256" },
+    ],
+  },
+  {
+    type: "event",
+    name: "XCMMessageSent",
+    inputs: [
+      { name: "paraId", type: "uint32", indexed: true },
+      { name: "messageHash", type: "bytes32", indexed: true },
+      { name: "amount", type: "uint256" },
+    ],
+  },
+  {
+    type: "event",
+    name: "XCMMessageFailed",
+    inputs: [
+      { name: "paraId", type: "uint32", indexed: true },
+      { name: "reason", type: "string" },
     ],
   },
 ] as const;

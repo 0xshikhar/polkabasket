@@ -2,7 +2,7 @@ import { useState, useCallback } from "react";
 import { parseEther } from "viem";
 import { useBasketManager } from "../hooks/useBasketManager";
 import { useWallet, useWalletClient } from "../contexts/WalletContext";
-import { APP_CHAIN_ID, APP_CHAIN_NAME, APP_NATIVE_SYMBOL, getExplorerTxUrl } from "../config/contracts";
+import { APP_CHAIN_ID, APP_CHAIN_NAME, APP_NATIVE_SYMBOL, getExplorerTxUrl, IS_LOCAL_XCM, IS_TESTNET_XCM } from "../config/contracts";
 import type { WalletClient } from "viem";
 
 const TARGET_CHAINS: Record<number, { name: string; explorer: string }> = {
@@ -37,7 +37,6 @@ export function WithdrawForm({
   const [amount, setAmount] = useState("");
   const [txHash, setTxHash] = useState<string | null>(null);
   const [txStatus, setTxStatus] = useState<"idle" | "pending" | "success" | "error">("idle");
-  const [xcmTracking, setXcmTracking] = useState<{ paraId: number; status: "pending" | "confirmed" | "failed" }[]>([]);
   const { withdraw, isLoading, error: contractError } = useBasketManager();
   const walletClient = useWalletClient();
   const { state, switchChain } = useWallet();
@@ -88,43 +87,57 @@ export function WithdrawForm({
     setTxStatus("pending");
     setTxHash(null);
     setLocalError(null);
-    setXcmTracking(allocations.map((a) => ({ 
-      paraId: a.paraId, 
-      status: "pending" as const 
-    })));
     
-    console.log("[WithdrawForm] ⏳ XCM Status: All chains pending...");
+    console.log("[WithdrawForm] ⏳ Processing withdrawal...");
     
     try {
       const tokenAmount = parseEther(amount);
       console.log("[WithdrawForm] 📡 Calling BasketManager.withdraw()...");
       
-      const hash = await withdraw(
+      const result = await withdraw(
         walletClient as WalletClient,
         basketId,
         tokenAmount
       );
       
       console.log("[WithdrawForm] ✅ Withdrawal successful!");
-      console.log("[WithdrawForm] 🔗 Transaction hash:", hash);
-      console.log("[WithdrawForm] 📊 XCM Status: Messages dispatched to", allocations.length, "parachains");
+      console.log("[WithdrawForm] 🔗 Transaction hash:", result.hash);
+      console.log("[WithdrawForm] 📊 XCM Events:", result.xcmEvents?.length || 0);
+      
+      if (result.xcmEvents && result.xcmEvents.length > 0) {
+        console.log("[WithdrawForm] 🎯 XCM Status:");
+        result.xcmEvents.forEach((event: { type: string; paraId?: number; messageHash?: string }, idx: number) => {
+          const paraId = event.paraId || 0;
+          const chain = TARGET_CHAINS[paraId];
+          if (event.type === "sent") {
+            console.log(`[WithdrawForm]    ✅ [${idx + 1}] ${chain?.name || `Para ${paraId}`}: XCM SENT`);
+            console.log(`[WithdrawForm]       Message Hash: ${event.messageHash}`);
+          } else {
+            console.log(`[WithdrawForm]    ❌ [${idx + 1}] ${chain?.name || `Para ${paraId}`}: XCM FAILED`);
+          }
+        });
+      } else {
+        console.warn("[WithdrawForm] ⚠️ NO XCM EVENTS - Local fallback used");
+      }
+      
       console.log("[WithdrawForm] 💰 PAS returned:", amount, APP_NATIVE_SYMBOL);
-      console.log("[WithdrawForm] 🎯 XCM Status per chain:");
-      allocations.forEach(a => {
-        const chain = TARGET_CHAINS[a.paraId];
-        console.log(`[WithdrawForm]    ✓ ${chain?.name || `Para ${a.paraId}`}: Confirmed`);
-      });
-      console.log("[WithdrawForm] 🔍 Check explorer:", getExplorerTxUrl(hash));
+      console.log("[WithdrawForm] 🔍 Check explorer:", getExplorerTxUrl(result.hash));
       console.log("[WithdrawForm] 📝 Note: Actual XCM execution on target chains takes time");
-      console.log("[WithdrawForm]    Monitor sovereign accounts:");
+      console.log("[WithdrawForm]    To verify XCM delivery:");
+      console.log("[WithdrawForm]    1. Copy message hash from logs above");
+      console.log("[WithdrawForm]    2. Check target chain explorers:");
       allocations.forEach(a => {
         const chain = TARGET_CHAINS[a.paraId];
-        console.log(`[WithdrawForm]    - ${chain?.name}: ${chain?.explorer}/account/<sovereign_account>`);
+        console.log(`[WithdrawForm]       - ${chain?.name}: ${chain?.explorer}/xcm/<message_hash>`);
+      });
+      console.log("[WithdrawForm]    3. Or check sovereign account balances:");
+      allocations.forEach(a => {
+        const chain = TARGET_CHAINS[a.paraId];
+        console.log(`[WithdrawForm]       - ${chain?.name}: ${chain?.explorer}/account/0x98b71d9da7f556addb143b901cc911867242e374f27f89d24b693974723e20aa`);
       });
       
-      setTxHash(hash);
+      setTxHash(result.hash);
       setTxStatus("success");
-      setXcmTracking((prev) => prev.map((t) => ({ ...t, status: "confirmed" as const })));
       setAmount("");
     } catch (err) {
       console.error("[WithdrawForm] ❌ Withdraw error:", err);
@@ -134,8 +147,7 @@ export function WithdrawForm({
       } else {
         setLocalError(errMsg);
         setTxStatus("error");
-        setXcmTracking((prev) => prev.map((t) => ({ ...t, status: "failed" as const })));
-        console.error("[WithdrawForm] 💥 XCM Status: All chains failed");
+        console.error("[WithdrawForm] 💥 Withdrawal failed");
       }
     }
   }, [amount, basketId, walletClient, withdraw, isCorrectChain, targetChainId, allocations]);
@@ -148,11 +160,41 @@ export function WithdrawForm({
   const hasBalance = parseFloat(userTokenBalance) > 0;
   const displayError = localError || (needsSwitchChain ? `Wrong network (${CHAIN_NAMES[chainId || 0] || `Chain ${chainId}`}). Please switch to ${APP_CHAIN_NAME}.` : null);
 
-  const confirmedCount = xcmTracking.filter((t) => t.status === "confirmed").length;
-
   return (
     <div className="bg-gray-800 rounded-lg p-6">
       <h3 className="text-xl font-bold mb-4 text-white">Withdraw {APP_NATIVE_SYMBOL}</h3>
+      
+      {/* XCM Mode Indicator */}
+      {IS_TESTNET_XCM && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <span className="text-amber-400 text-lg">🎭</span>
+            <div>
+              <h4 className="text-amber-300 font-semibold text-sm mb-1">Demo Mode</h4>
+              <p className="text-amber-200/80 text-xs leading-relaxed">
+                XCM events are simulated for demonstration purposes. Real XCM is unavailable on Paseo testnet. 
+                Withdrawals will burn your tokens and return PAS from local holdings on Asset Hub.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {IS_LOCAL_XCM && (
+        <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-lg p-4 mb-4">
+          <div className="flex items-start gap-3">
+            <span className="text-emerald-400 text-lg">✓</span>
+            <div>
+              <h4 className="text-emerald-300 font-semibold text-sm mb-1">Full XCM Enabled</h4>
+              <p className="text-emerald-200/80 text-xs leading-relaxed">
+                Real XCM functionality is active. Withdrawals will dispatch XCM messages to retrieve 
+                funds from parachains.
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="space-y-4">
         <div>
           <label className="block text-gray-300 mb-2">Amount ({tokenSymbol})</label>
@@ -187,9 +229,21 @@ export function WithdrawForm({
           <div className="bg-gray-700 rounded p-4">
             <p className="text-gray-300 text-sm mb-2">You will receive:</p>
             <p className="text-2xl font-bold text-white">{amount} {APP_NATIVE_SYMBOL}</p>
-            <p className="text-gray-500 text-xs mt-1">
-              Distributed via XCM to: {allocations.map((a) => TARGET_CHAINS[a.paraId]?.name || `Para ${a.paraId}`).join(", ")}
-            </p>
+            {IS_LOCAL_XCM && (
+              <p className="text-emerald-400/70 text-xs mt-1">
+                Retrieved via XCM from parachains
+              </p>
+            )}
+            {IS_TESTNET_XCM && (
+              <p className="text-amber-400/70 text-xs mt-1">
+                From local holdings (XCM simulated for demo)
+              </p>
+            )}
+            {!IS_LOCAL_XCM && !IS_TESTNET_XCM && (
+              <p className="text-amber-400/70 text-xs mt-1">
+                From local holdings on Asset Hub (XCM unavailable)
+              </p>
+            )}
           </div>
         )}
 
@@ -216,7 +270,17 @@ export function WithdrawForm({
 
         {txStatus === "success" && txHash && (
           <div className="bg-emerald-500/10 border border-emerald-500/20 rounded p-3">
-            <p className="text-emerald-400 text-sm mb-1">Withdrawal initiated!</p>
+            <p className="text-emerald-400 text-sm mb-1">Withdrawal successful!</p>
+            {IS_TESTNET_XCM && (
+              <p className="text-amber-400/80 text-xs mb-2">
+                Demo: XCM events simulated. PAS returned from local holdings.
+              </p>
+            )}
+            {IS_LOCAL_XCM && (
+              <p className="text-emerald-300/70 text-xs mb-2">
+                XCM withdrawal messages dispatched to parachains.
+              </p>
+            )}
             <a
               href={getExplorerTxUrl(txHash) || "#"}
               target="_blank"
@@ -225,51 +289,15 @@ export function WithdrawForm({
             >
               View on Explorer ↗
             </a>
-            
-            {xcmTracking.length > 0 && (
-              <div className="mt-3 pt-3 border-t border-emerald-500/20">
-                <p className="text-gray-400 text-xs mb-2">XCM Status:</p>
-                <div className="flex flex-wrap gap-2">
-                  {xcmTracking.map((track) => {
-                    const chain = TARGET_CHAINS[track.paraId];
-                    const statusColor = track.status === "confirmed" ? "bg-emerald-500/20 text-emerald-400" 
-                      : track.status === "failed" ? "bg-red-500/20 text-red-400" 
-                      : "bg-yellow-500/20 text-yellow-400";
-                    const statusIcon = track.status === "confirmed" ? "✓" 
-                      : track.status === "failed" ? "✗" 
-                      : "⏳";
-                    return (
-                      <span key={track.paraId} className={`px-2 py-1 rounded text-xs ${statusColor}`}>
-                        {chain?.name || `Para ${track.paraId}`}: {statusIcon}
-                      </span>
-                    );
-                  })}
-                </div>
-                {confirmedCount < xcmTracking.length && (
-                  <p className="text-gray-500 text-xs mt-2">
-                    Waiting for XCM completion on remaining chains...
-                  </p>
-                )}
-              </div>
-            )}
           </div>
         )}
 
         {txStatus === "error" && (
           <div className="bg-red-500/10 border border-red-500/20 rounded p-3">
             <p className="text-red-400 text-sm mb-2">Withdrawal failed</p>
-            {xcmTracking.length > 0 && (
-              <div className="flex flex-wrap gap-2">
-                {xcmTracking.map((track) => {
-                  const chain = TARGET_CHAINS[track.paraId];
-                  return (
-                    <span key={track.paraId} className="px-2 py-1 rounded text-xs bg-red-500/20 text-red-400">
-                      {chain?.name || `Para ${track.paraId}`}: ✗ Failed
-                    </span>
-                  );
-                })}
-              </div>
-            )}
+            <p className="text-red-300/70 text-xs">
+              Check your balance and try again.
+            </p>
           </div>
         )}
 

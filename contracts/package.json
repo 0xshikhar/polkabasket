@@ -21,7 +21,8 @@
     "fund:sovereign": "hardhat --network paseo run scripts/fund-sovereign.ts",
     "deploy:xcm-precompile": "hardhat --network paseo run scripts/deploy-xcm-precompile.ts",
     "verify:sovereign": "hardhat --network paseo run scripts/verify-sovereign.ts",
-    "verify:xcm": "hardhat --network paseo run scripts/verify-xcm.ts"
+    "verify:xcm": "hardhat --network paseo run scripts/verify-xcm.ts",
+    "test:xcm-deposit": "hardhat --network paseo run scripts/test-xcm-deposit.js"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",

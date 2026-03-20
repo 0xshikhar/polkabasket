@@ -7,7 +7,13 @@ import {
   APP_RPC_URL,
   BASKET_MANAGER_ADDRESS,
   BASKET_MANAGER_ABI,
+  IS_TESTNET_XCM,
+  DEFAULT_CHAINS,
 } from "../config/contracts";
+import {
+  simulateXCMEvents,
+  simulateXCMWithdrawEvents,
+} from "../services/xcmSimulation";
 
 const publicClient = createPublicClient({
   chain: APP_CHAIN,
@@ -40,6 +46,142 @@ async function waitForReceipt(hash: `0x${string}`, timeoutMs = 60_000) {
     }
   }
   throw new Error("Timed out waiting for transaction receipt");
+}
+
+// XCM Event topic hashes (keccak256 of event signatures)
+const EVENT_TOPICS = {
+  // XCMMessageSent(uint32 indexed paraId, bytes32 indexed messageHash, uint256 amount)
+  XCMMessageSent: "0x629ed2ee510cb8ee1b03fe5c7d738ff856411d8f43099301f84789088254f17f",
+  // XCMMessageFailed(uint32 indexed paraId, string reason)
+  XCMMessageFailed: "0xd08ecae49834816c342f1d13c001844a8178767b931af94a603f8a64ce7f1a45",
+  // DeploymentDispatched(uint256 indexed basketId, uint32 paraId, uint256 amount)
+  DeploymentDispatched: "0x2a714abd697b83e14df66ce02bcadcab42e9d2305e12d5abf7b61656dfa689eb",
+  // DeploymentFailed(uint256 indexed basketId, uint32 paraId, uint256 amount, string reason)
+  DeploymentFailed: "0xed21e79921f361289f658defd542daf27748d63bfc4e5db793f0a4a8bfac64e0",
+  // Deposited(uint256 indexed basketId, address indexed user, uint256 amount, uint256 tokensMinted)
+  Deposited: "0xad5b4075b97dbf75ad5c78f7afac948e4ae611c4fdf2825e2ce3c6c96925bf3b",
+  // Transfer(address indexed from, address indexed to, uint256 value) - ERC20
+  Transfer: "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
+} as const;
+
+export interface XCMEvent {
+  type: "sent" | "failed" | "deployment_dispatched" | "deployment_failed" | "deposited" | "transfer";
+  paraId?: number;
+  basketId?: bigint;
+  messageHash?: string;
+  amount?: bigint;
+  reason?: string;
+  user?: string;
+  tokensMinted?: bigint;
+}
+
+function parseXCMEvents(receipt: { logs: Array<{ topics: string[]; data: string; address: string }> }): XCMEvent[] {
+  const events: XCMEvent[] = [];
+  
+  console.log("[parseXCMEvents] 🔍 Parsing", receipt.logs?.length || 0, "logs");
+  console.log("[parseXCMEvents] 🔍 BasketManager:", BASKET_MANAGER_ADDRESS);
+  
+  for (let i = 0; i < receipt.logs.length; i++) {
+    const log = receipt.logs[i];
+    const topic0 = log.topics[0]?.toLowerCase();
+    
+    console.log(`[parseXCMEvents] 📋 Log[${i}]:`);
+    console.log(`[parseXCMEvents]    Topic0: ${topic0}`);
+    console.log(`[parseXCMEvents]    Address: ${log.address}`);
+    console.log(`[parseXCMEvents]    Data: ${log.data?.slice(0, 66)}...`);
+    
+    // Check if log is from BasketManager
+    if (log.address?.toLowerCase() !== BASKET_MANAGER_ADDRESS?.toLowerCase()) {
+      console.log(`[parseXCMEvents]    ⚠️ Skipping - wrong address`);
+      continue;
+    }
+    
+    // Parse based on event type
+    switch (topic0) {
+      case EVENT_TOPICS.XCMMessageSent:
+        {
+          const paraId = parseInt(log.topics[1] || "0", 16);
+          const messageHash = log.topics[2];
+          const amount = BigInt(log.data?.slice(0, 66) || "0");
+          events.push({ 
+            type: "sent", 
+            paraId, 
+            messageHash, 
+            amount 
+          });
+          console.log(`[parseXCMEvents]    ✅ XCMMessageSent: Para ${paraId}, Amount ${amount}`);
+        }
+        break;
+        
+      case EVENT_TOPICS.XCMMessageFailed:
+        {
+          const paraId = parseInt(log.topics[1] || "0", 16);
+          const reason = "XCM dispatch failed - check XCM precompile availability";
+          events.push({ 
+            type: "failed", 
+            paraId, 
+            reason 
+          });
+          console.log(`[parseXCMEvents]    ❌ XCMMessageFailed: Para ${paraId}, Reason: ${reason}`);
+        }
+        break;
+        
+      case EVENT_TOPICS.DeploymentDispatched:
+        {
+          const basketId = BigInt(log.topics[1] || "0");
+          const paraId = parseInt(log.data?.slice(0, 66) || "0", 16);
+          const amount = BigInt("0x" + log.data?.slice(66, 130) || "0");
+          events.push({ 
+            type: "deployment_dispatched", 
+            basketId, 
+            paraId, 
+            amount 
+          });
+          console.log(`[parseXCMEvents]    ✅ DeploymentDispatched: Basket ${basketId}, Para ${paraId}, Amount ${amount}`);
+        }
+        break;
+        
+      case EVENT_TOPICS.DeploymentFailed:
+        {
+          const basketId = BigInt(log.topics[1] || "0");
+          const paraId = parseInt(log.data?.slice(0, 66) || "0", 16);
+          const amount = BigInt("0x" + log.data?.slice(66, 130) || "0");
+          const reason = "Deployment failed - sovereign account needs funding";
+          events.push({ 
+            type: "deployment_failed", 
+            basketId, 
+            paraId, 
+            amount, 
+            reason 
+          });
+          console.log(`[parseXCMEvents]    ❌ DeploymentFailed: Basket ${basketId}, Para ${paraId}, Amount ${amount}`);
+          console.log(`[parseXCMEvents]       💡 Reason: ${reason}`);
+        }
+        break;
+        
+      case EVENT_TOPICS.Deposited:
+        {
+          const basketId = BigInt(log.topics[1] || "0");
+          const user = "0x" + (log.topics[2] || "").slice(26); // Remove padding
+          const amount = BigInt("0x" + log.data?.slice(0, 66) || "0");
+          const tokensMinted = BigInt("0x" + log.data?.slice(66, 130) || "0");
+          events.push({ 
+            type: "deposited", 
+            basketId, 
+            user, 
+            amount, 
+            tokensMinted 
+          });
+          console.log(`[parseXCMEvents]    ✅ Deposited: Basket ${basketId}, User ${user?.slice(0, 10)}..., Amount ${amount}, Tokens ${tokensMinted}`);
+        }
+        break;
+        
+      default:
+        console.log(`[parseXCMEvents]    ❓ Unknown event: ${topic0?.slice(0, 20)}...`);
+    }
+  }
+  
+  return events;
 }
 
 function normalizeErrorMessage(err: unknown, fallback: string): string {
@@ -264,12 +406,70 @@ export function useBasketManager() {
       console.log("[useBasketManager] 🔗 Transaction sent:", hash);
       
       console.log("[useBasketManager] ⏳ Waiting for receipt...");
-      await waitForReceipt(hash);
+      const receipt = await waitForReceipt(hash);
       console.log("[useBasketManager] ✅ Transaction confirmed!");
-      console.log("[useBasketManager] 🎯 XCM messages dispatched to parachains");
-      console.log("[useBasketManager] 🔍 Explorer:", `https://blockscout-testnet.polkadot.io/tx/${hash}`);
       
-      return hash;
+      // Parse XCM events from receipt or simulate for testnet
+      console.log("[useBasketManager] 🔍 Parsing XCM events from receipt...");
+      console.log("[useBasketManager] 📋 Receipt logs count:", receipt.logs?.length || 0);
+      
+      let xcmEvents: XCMEvent[] = [];
+      
+      // If in testnet mode, simulate XCM events for demo
+      if (IS_TESTNET_XCM) {
+        console.log("[useBasketManager] 🎭 Testnet mode: Simulating XCM events for demo...");
+        
+        // Get basket info for allocations
+        const basket = await getBasket(basketId);
+        const allocations = basket?.allocations || [];
+        
+        xcmEvents = await simulateXCMEvents(
+          basketId,
+          value,
+          allocations,
+          account,
+          { successRate: 1.0, delayMs: 1500 } // 100% success for demo
+        );
+        
+        console.log("[useBasketManager] ✅ Simulated XCM events:", xcmEvents.length);
+      } else {
+        // Real XCM parsing for local mode
+        xcmEvents = parseXCMEvents(receipt);
+      }
+      
+      console.log("[useBasketManager] 📊 XCM Events found:", xcmEvents.length);
+      
+      if (xcmEvents.length === 0) {
+        console.warn("[useBasketManager] ⚠️ NO XCM EVENTS FOUND!");
+        console.warn("[useBasketManager] ⚠️ This means:");
+        console.warn("[useBasketManager]    1. XCM precompile might not be deployed");
+        console.warn("[useBasketManager]    2. XCM might be disabled in BasketManager");
+        console.warn("[useBasketManager]    3. Transaction didn't trigger XCM dispatch");
+      } else {
+        console.log("[useBasketManager] 🎯 XCM Status:");
+        xcmEvents.forEach((event, idx) => {
+          if (event.type === "sent") {
+            console.log(`[useBasketManager]    ✅ [${idx + 1}] XCM Sent to Para ${event.paraId}`);
+            console.log(`[useBasketManager]       Message Hash: ${event.messageHash}`);
+            console.log(`[useBasketManager]       Amount: ${formatUnits(event.amount || 0n, APP_NATIVE_DECIMALS)} PAS`);
+            console.log(`[useBasketManager]       🔗 Check status: https://hydration.subscan.io/xcm/${event.messageHash}`);
+          } else {
+            console.log(`[useBasketManager]    ❌ [${idx + 1}] XCM Failed to Para ${event.paraId}`);
+            console.log(`[useBasketManager]       Reason: ${event.reason}`);
+          }
+        });
+      }
+      
+      console.log("[useBasketManager] 🔍 Explorer:", `https://blockscout-testnet.polkadot.io/tx/${hash}`);
+      console.log("[useBasketManager] 📖 How to verify XCM:");
+      console.log("[useBasketManager]    1. Open explorer link above");
+      console.log("[useBasketManager]    2. Check 'Logs' tab for XCMMessageSent events");
+      console.log("[useBasketManager]    3. Copy message hash and check on target chain explorers:");
+      console.log("[useBasketManager]       - Hydration: https://hydration.subscan.io");
+      console.log("[useBasketManager]       - Moonbeam: https://moonbase.subscan.io");
+      console.log("[useBasketManager]       - Acala: https://acala.subscan.io");
+      
+      return { hash, xcmEvents };
     } catch (err) {
       let errorMessage = normalizeErrorMessage(err, "Deposit failed");
       console.error("[useBasketManager] ❌ Deposit error:", errorMessage);
@@ -324,13 +524,57 @@ export function useBasketManager() {
       console.log("[useBasketManager] 🔗 Transaction sent:", hash);
       
       console.log("[useBasketManager] ⏳ Waiting for receipt...");
-      await waitForReceipt(hash);
+      const receipt = await waitForReceipt(hash);
       console.log("[useBasketManager] ✅ Transaction confirmed!");
-      console.log("[useBasketManager] 🎯 XCM withdraw messages dispatched");
+      
+      // Parse XCM events from receipt or simulate for testnet
+      console.log("[useBasketManager] 🔍 Parsing XCM events from receipt...");
+      
+      let xcmEvents: XCMEvent[] = [];
+      
+      // If in testnet mode, simulate XCM events for demo
+      if (IS_TESTNET_XCM) {
+        console.log("[useBasketManager] 🎭 Testnet mode: Simulating XCM withdrawal events for demo...");
+        
+        // Get basket info for allocations
+        const basket = await getBasket(basketId);
+        const allocations = basket?.allocations || [];
+        
+        xcmEvents = await simulateXCMWithdrawEvents(
+          basketId,
+          tokenAmount,
+          allocations,
+          account,
+          { successRate: 1.0, delayMs: 1500 } // 100% success for demo
+        );
+        
+        console.log("[useBasketManager] ✅ Simulated XCM withdrawal events:", xcmEvents.length);
+      } else {
+        // Real XCM parsing for local mode
+        xcmEvents = parseXCMEvents(receipt);
+      }
+      
+      console.log("[useBasketManager] 📊 XCM Events found:", xcmEvents.length);
+      
+      if (xcmEvents.length === 0) {
+        console.warn("[useBasketManager] ⚠️ NO XCM EVENTS FOUND!");
+        console.warn("[useBasketManager] ⚠️ Withdraw may have used local fallback (no cross-chain transfer)");
+      } else {
+        console.log("[useBasketManager] 🎯 XCM Withdraw Status:");
+        xcmEvents.forEach((event, idx) => {
+          if (event.type === "sent") {
+            console.log(`[useBasketManager]    ✅ [${idx + 1}] XCM Withdraw Sent to Para ${event.paraId}`);
+            console.log(`[useBasketManager]       Message Hash: ${event.messageHash}`);
+          } else {
+            console.log(`[useBasketManager]    ❌ [${idx + 1}] XCM Withdraw Failed to Para ${event.paraId}`);
+          }
+        });
+      }
+      
       console.log("[useBasketManager] 💰 PAS returned to user");
       console.log("[useBasketManager] 🔍 Explorer:", `https://blockscout-testnet.polkadot.io/tx/${hash}`);
       
-      return hash;
+      return { hash, xcmEvents };
     } catch (err) {
       const errorMessage = normalizeErrorMessage(err, "Withdraw failed");
       console.error("[useBasketManager] ❌ Withdraw error:", errorMessage);
