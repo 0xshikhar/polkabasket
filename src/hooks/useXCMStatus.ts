@@ -1,4 +1,5 @@
 import { useState, useCallback, useEffect } from "react";
+import { APP_EXPLORER_URL } from "../config/contracts";
 
 export type XCMMessageStatus = "pending" | "confirmed" | "failed";
 
@@ -95,7 +96,7 @@ export function useXCMExplorer(paraId: number): string | null {
 
   useEffect(() => {
     const urls: Record<number, string> = {
-      1000: "https://assethub-westend.subscan.io",
+      1000: APP_EXPLORER_URL,
       2034: "https://hydration.subscan.io",
       2004: "https://moonbase.subscan.io",
       2000: "https://acala.subscan.io",

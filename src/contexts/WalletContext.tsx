@@ -2,6 +2,7 @@ import { createContext, useContext, useCallback, useState, type ReactNode } from
 import type { WalletClient } from "viem";
 import { useEVMWallet } from "../hooks/useEVMWallet";
 import { useSubWallet, type SubWalletAccount } from "../hooks/useSubWallet";
+import { APP_CHAIN_NAME } from "../config/contracts";
 
 export interface WalletState {
   evm: {
@@ -42,7 +43,7 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     try {
       await evm.connect();
       if (evm.needsSwitchChain) {
-        setGlobalError(`Please switch to Polkadot Hub TestNet (Chain ID: ${evm.targetChainId}) to continue.`);
+        setGlobalError(`Please switch to ${APP_CHAIN_NAME} (Chain ID: ${evm.targetChainId}) to continue.`);
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "EVM connection failed";

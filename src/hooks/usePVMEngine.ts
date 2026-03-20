@@ -1,11 +1,9 @@
 import { createPublicClient, http, hexToBytes } from 'viem';
-import { polkadotHubTestnet, USE_MOCK_PVM, PVM_ENGINE_ADDRESS } from '../config/contracts';
-
-const RPC_URL = import.meta.env.VITE_RPC_URL || "https://eth-rpc-testnet.polkadot.io";
+import { APP_CHAIN, APP_RPC_URL, USE_MOCK_PVM, PVM_ENGINE_ADDRESS } from '../config/contracts';
 
 const pvmClient = createPublicClient({
-  chain: polkadotHubTestnet,
-  transport: http(RPC_URL),
+  chain: APP_CHAIN,
+  transport: http(APP_RPC_URL),
 });
 
 const SELECTOR_REBALANCE = '0xf4993018';

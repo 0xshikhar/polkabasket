@@ -1,10 +1,10 @@
 import { useCallback } from "react";
 import { createPublicClient, http } from "viem";
-import { polkadotHubTestnet, BASKET_TOKEN_ABI } from "../config/contracts";
+import { APP_CHAIN, APP_RPC_URL, BASKET_TOKEN_ABI } from "../config/contracts";
 
 const publicClient = createPublicClient({
-  chain: polkadotHubTestnet,
-  transport: http("https://westend-asset-hub-eth-rpc.polkadot.io"),
+  chain: APP_CHAIN,
+  transport: http(APP_RPC_URL),
 });
 
 export interface TokenInfo {
