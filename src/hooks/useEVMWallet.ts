@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState, useRef } from "react";
 import { createWalletClient, custom, type WalletClient, getAddress } from "viem";
-import { polkadotHubTestnet } from "../config/contracts";
+import { APP_CHAIN } from "../config/contracts";
 
-const TARGET_CHAIN_ID = Number(import.meta.env.VITE_CHAIN_ID) || 420420417;
+const TARGET_CHAIN_ID = APP_CHAIN.id;
 
 type EVMProvider = {
   request: (args: { method: string; params?: unknown[] }) => Promise<unknown>;
@@ -55,11 +55,32 @@ export function useEVMWallet() {
     } catch (err) {
       const e = err as { code?: number; message?: string };
       if (e?.code === 4902) {
-        setError(`Chain ${target} not added to wallet. Please add it manually.`);
+        try {
+          await p.request({
+            method: "wallet_addEthereumChain",
+            params: [
+              {
+                chainId: `0x${APP_CHAIN.id.toString(16)}`,
+                chainName: APP_CHAIN.name,
+                nativeCurrency: APP_CHAIN.nativeCurrency,
+                rpcUrls: APP_CHAIN.rpcUrls.default.http,
+                blockExplorerUrls: APP_CHAIN.blockExplorers?.default?.url ? [APP_CHAIN.blockExplorers.default.url] : undefined,
+              },
+            ],
+          });
+          await p.request({
+            method: "wallet_switchEthereumChain",
+            params: [{ chainId: `0x${APP_CHAIN.id.toString(16)}` }],
+          });
+        } catch (addErr) {
+          const addE = addErr as { message?: string };
+          setError(addE?.message || `Chain ${target} not added to wallet. Please add it manually.`);
+          throw addErr;
+        }
       } else {
         setError(e?.message || "Failed to switch chain");
+        throw err;
       }
-      throw err;
     }
   }, []);
 
@@ -86,7 +107,7 @@ export function useEVMWallet() {
       
       const client = createWalletClient({
         account: accountAddress,
-        chain: polkadotHubTestnet,
+        chain: APP_CHAIN,
         transport: custom(p),
       });
       
@@ -120,7 +141,10 @@ export function useEVMWallet() {
     if (!address || !providerRef.current) return;
     const p = providerRef.current;
     if (typeof (p as EVMProvider & { on?: unknown }).on !== "function") return;
-    const prov = p as EVMProvider & { on: (e: string, cb: (payload: unknown) => void) => () => void };
+    const prov = p as EVMProvider & {
+      on: (e: string, cb: (payload: unknown) => void) => void;
+      removeListener?: (e: string, cb: (payload: unknown) => void) => void;
+    };
 
     const onAccounts = (accounts: unknown) => {
       const list = accounts as string[];
@@ -139,8 +163,10 @@ export function useEVMWallet() {
     prov.on("chainChanged", onChainChanged);
 
     return () => {
-      prov.on("accountsChanged", onAccounts);
-      prov.on("chainChanged", onChainChanged);
+      if (typeof prov.removeListener === "function") {
+        prov.removeListener("accountsChanged", onAccounts);
+        prov.removeListener("chainChanged", onChainChanged);
+      }
     };
   }, [address, disconnect]);
 
