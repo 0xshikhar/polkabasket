@@ -142,7 +142,7 @@ export function DepositForm({
               <h4 className="text-amber-300 font-semibold text-sm mb-1">Testnet (Simulated XCM)</h4>
               <p className="text-amber-200/80 text-xs leading-relaxed">
                 XCM events are simulated for demonstration purposes. Real XCM is unavailable on Paseo testnet.
-                Use Local XCM for actual cross-chain deployment.
+                Use Local XCM for actual cross-chain deployment.( see here <a href="https://github.com/0xshikhar/polkabasket/blob/master/docs/XCM_TESTING.md">XCM_TESTING.md</a>)
               </p>
             </div>
           </div>

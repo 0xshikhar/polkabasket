@@ -5,6 +5,10 @@ import { formatUnits } from "viem";
 import { APP_NATIVE_DECIMALS, APP_NATIVE_SYMBOL } from "../config/contracts";
 import { DepositForm } from "../components/DepositForm";
 import { WithdrawForm } from "../components/WithdrawForm";
+import {
+  getCustomBaskets,
+  customBasketToPreview,
+} from "../utils/customBaskets";
 
 interface BasketPreview {
   id: bigint;
@@ -13,6 +17,9 @@ interface BasketPreview {
   totalDeposited: bigint;
   active: boolean;
   allocations: Array<{ chain: string; weight: number }>;
+  isCustom?: boolean;
+  customId?: string;
+  status?: "draft" | "pending" | "deployed";
 }
 
 const MOCK_BASKETS: (BasketPreview & { creator: string })[] = [
@@ -87,7 +94,6 @@ export function BasketsPage() {
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareBasket, setShareBasket] = useState<(BasketPreview & { creator: string }) | null>(null);
 
-  // Always show all 4 mock baskets - only add more if they exist on-chain
   async function fetchBasketInfo(basketId: bigint): Promise<(BasketPreview & { creator: string }) | null> {
     try {
       const basket = await getBasket(basketId);
@@ -121,25 +127,37 @@ export function BasketsPage() {
 
   async function fetchAdditionalBaskets() {
     try {
+      // Load custom baskets
+      const custom = getCustomBaskets().map(customBasketToPreview).map(c => ({
+        id: 999999n,
+        name: c.name,
+        symbol: c.symbol,
+        totalDeposited: 0n,
+        active: c.status === "deployed",
+        creator: c.creator === "anonymous" ? "You" : c.creator.slice(0, 8) + "...",
+        allocations: c.allocations.map(a => ({ chain: a.chain, weight: a.weight })),
+        isCustom: true,
+        customId: c.id,
+        status: c.status,
+      }));
+
       const nextId = await getNextBasketId();
       const currentCount = MOCK_BASKETS.length;
 
-      if (Number(nextId) > currentCount) {
-        const additionalBaskets: (BasketPreview & { creator: string })[] = [];
+      const additionalBaskets: (BasketPreview & { creator: string })[] = [];
 
+      if (Number(nextId) > currentCount) {
         for (let i = currentCount; i < Number(nextId); i++) {
           const basket = await fetchBasketInfo(BigInt(i));
           if (basket) {
             additionalBaskets.push(basket);
           }
         }
-
-        if (additionalBaskets.length > 0) {
-          setBaskets([...MOCK_BASKETS, ...additionalBaskets]);
-        }
       }
+
+      setBaskets([...MOCK_BASKETS, ...additionalBaskets, ...custom]);
     } catch (error) {
-      console.error("Failed to fetch additional baskets:", error);
+      console.error("Failed to fetch baskets:", error);
     }
   }
 
@@ -404,14 +422,28 @@ function DepositWithdrawModal({ basket, onClose }: { basket: BasketPreview & { c
   );
 }
 function BasketCard({ basket, isStatic = false, onShare }: { basket: BasketPreview & { creator: string }; isStatic?: boolean; onShare?: (basket: BasketPreview & { creator: string }) => void }) {
+  const isCustom = basket.isCustom;
+  const isPending = isCustom && (basket.status === "pending" || basket.status === "draft");
+  
   return (
-    <div className={`h-full w-full overflow-hidden rounded-[2.5rem] border border-white/10 bg-neutral-900 p-8 shadow-2xl transition hover:border-white/20 ${!isStatic ? 'ring-1 ring-white/5' : ''}`}>
+    <div className={`h-full w-full overflow-hidden rounded-[2.5rem] border bg-neutral-900 p-8 shadow-2xl transition ${
+      isPending ? "border-yellow-500/30" : "border-white/10 hover:border-white/20"
+    } ${!isStatic ? 'ring-1 ring-white/5' : ''}`}>
       <div className="flex h-full flex-col">
         {/* Header */}
         <div className="flex items-start justify-between">
           <div className="space-y-1">
-            <h3 className="text-2xl font-bold text-white">{basket.name}</h3>
-            <p className="text-xs font-medium uppercase tracking-widest text-neutral-500">Yield Strategy: Moderate Risk</p>
+            <div className="flex items-center gap-2">
+              <h3 className="text-2xl font-bold text-white">{basket.name}</h3>
+              {isCustom && (
+                <span className="rounded-full bg-blue-500/20 px-2 py-0.5 text-[8px] font-bold uppercase tracking-wider text-blue-400">
+                  Custom
+                </span>
+              )}
+            </div>
+            <p className={`text-xs font-medium uppercase tracking-widest ${isPending ? "text-yellow-500" : "text-neutral-500"}`}>
+              {isPending ? "Pending Approval" : "Yield Strategy: Moderate Risk"}
+            </p>
           </div>
           <div className="h-12 w-12 rounded-2xl bg-white/5 p-2.5 text-white">
             <svg fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -435,7 +467,7 @@ function BasketCard({ basket, isStatic = false, onShare }: { basket: BasketPrevi
               fill="none"
               stroke="currentColor"
               strokeWidth="2"
-              className="text-emerald-500"
+              className={isPending ? "text-yellow-500" : "text-emerald-500"}
             />
             <path
               d="M0 50 Q 20 40, 40 45 T 80 30 T 120 35 T 160 15 L 200 20 V 60 H 0 Z"
@@ -444,7 +476,7 @@ function BasketCard({ basket, isStatic = false, onShare }: { basket: BasketPrevi
             />
             <defs>
               <linearGradient id="gradient-green" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor="#10B981" />
+                <stop offset="0%" stopColor={isPending ? "#F59E0B" : "#10B981"} />
                 <stop offset="100%" stopColor="transparent" />
               </linearGradient>
             </defs>
@@ -455,12 +487,12 @@ function BasketCard({ basket, isStatic = false, onShare }: { basket: BasketPrevi
         <div className="mt-6 grid grid-cols-2 gap-4">
           <div className="rounded-2xl bg-white/[0.03] p-4 border border-white/5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Target APY</p>
-            <p className="mt-1 text-xl font-bold text-emerald-400">12.4%</p>
+            <p className={`mt-1 text-xl font-bold ${isPending ? "text-yellow-400" : "text-emerald-400"}`}>12.4%</p>
           </div>
           <div className="rounded-2xl bg-white/[0.03] p-4 border border-white/5">
             <p className="text-[10px] font-bold uppercase tracking-widest text-neutral-500">Total TVL</p>
             <p className="mt-1 text-xl font-bold text-white">
-              {(Number(formatUnits(basket.totalDeposited, APP_NATIVE_DECIMALS))).toLocaleString()}
+              {isPending ? "—" : (Number(formatUnits(basket.totalDeposited, APP_NATIVE_DECIMALS))).toLocaleString()}
             </p>
           </div>
         </div>
@@ -487,12 +519,18 @@ function BasketCard({ basket, isStatic = false, onShare }: { basket: BasketPrevi
         {!isStatic && (
           <div className="mt-6 border-t border-white/5 pt-6 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Link
-                to={`/basket/${basket.id}`}
-                className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-emerald-500 hover:bg-white/10 hover:border-emerald-500/30 transition shadow-lg"
-              >
-                View Full Details
-              </Link>
+              {isPending ? (
+                <span className="px-4 py-2 rounded-xl bg-yellow-500/10 border border-yellow-500/20 text-[10px] font-bold uppercase tracking-widest text-yellow-400 shadow-lg">
+                  Pending Approval
+                </span>
+              ) : (
+                <Link
+                  to={`/basket/${basket.id}`}
+                  className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-[10px] font-bold uppercase tracking-widest text-emerald-500 hover:bg-white/10 hover:border-emerald-500/30 transition shadow-lg"
+                >
+                  View Full Details
+                </Link>
+              )}
 
               {onShare && (
                 <button
@@ -509,7 +547,11 @@ function BasketCard({ basket, isStatic = false, onShare }: { basket: BasketPrevi
 
             <div className="flex flex-col items-end">
               <span className="text-[8px] uppercase tracking-[0.2em] text-neutral-600 font-black mb-1">Created By</span>
-              <button className="px-3 py-1.5 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-[10px] font-bold text-white hover:bg-emerald-500/20 transition">
+              <button className={`px-3 py-1.5 rounded-lg border text-[10px] font-bold text-white transition ${
+                isPending 
+                  ? "bg-yellow-500/10 border-yellow-500/20 hover:bg-yellow-500/20" 
+                  : "bg-emerald-500/10 border-emerald-500/20 hover:bg-emerald-500/20"
+              }`}>
                 {basket.creator}
               </button>
             </div>

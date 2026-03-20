@@ -3,25 +3,13 @@ import { useNavigate, Link } from "react-router-dom";
 
 import { useWallet } from "../contexts/WalletContext";
 import { BASKET_MANAGER_ADDRESS } from "../config/contracts";
-
-interface Allocation {
-  paraId: number;
-  protocol: string;
-  weightBps: number;
-}
-
-interface CustomBasket {
-  id: string;
-  name: string;
-  symbol: string;
-  allocations: Allocation[];
-  createdAt: number;
-  creator: string;
-  status: "draft" | "pending" | "deployed";
-  txHash?: string;
-}
-
-const STORAGE_KEY = "polkabasket_custom_baskets";
+import {
+  type CustomBasket,
+  getCustomBaskets,
+  saveCustomBasket,
+  deleteCustomBasket,
+  updateCustomBasketStatus,
+} from "../utils/customBaskets";
 
 const SUPPORTED_PROTOCOLS = [
   { paraId: 2034, name: "Hydration LP", description: "Liquidity provision on Hydration", icon: "💧" },
@@ -52,20 +40,10 @@ export function CreateBasketPage() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [deployTxHash, setDeployTxHash] = useState<string | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      if (stored) {
-        const parsed = JSON.parse(stored);
-        if (Array.isArray(parsed)) {
-          setCustomBaskets(parsed);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load baskets from localStorage:", e);
-      setCustomBaskets([]);
-    }
+    setCustomBaskets(getCustomBaskets());
   }, []);
 
   const totalWeight = allocations.reduce((acc, a) => acc + a.weightBps, 0);
@@ -105,26 +83,11 @@ export function CreateBasketPage() {
   };
 
   const saveBasketToStorage = (basket: CustomBasket): boolean => {
-    try {
-      const stored = localStorage.getItem(STORAGE_KEY);
-      let existing: CustomBasket[] = [];
-      if (stored) {
-        try {
-          existing = JSON.parse(stored);
-          if (!Array.isArray(existing)) existing = [];
-        } catch {
-          existing = [];
-        }
-      }
-      const filtered = existing.filter(b => b.id !== basket.id);
-      const updated = [basket, ...filtered];
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      setCustomBaskets(updated);
-      return true;
-    } catch (err) {
-      console.error("Failed to save basket:", err);
-      return false;
+    const saved = saveCustomBasket(basket);
+    if (saved) {
+      setCustomBaskets(getCustomBaskets());
     }
+    return saved;
   };
 
   const handleSaveDraft = () => {

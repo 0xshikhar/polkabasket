@@ -3,6 +3,13 @@ import { Link } from "react-router-dom";
 import { useBasketManager } from "../hooks/useBasketManager";
 import { formatUnits } from "viem";
 import { APP_NATIVE_DECIMALS, APP_NATIVE_SYMBOL } from "../config/contracts";
+import {
+  getCustomBaskets,
+  customBasketToPreview,
+  deleteCustomBasket,
+  type CustomBasket,
+  type CustomBasketPreview,
+} from "../utils/customBaskets";
 
 interface BasketInfo {
   id: bigint;
@@ -12,6 +19,9 @@ interface BasketInfo {
   active: boolean;
   allocations: Array<{ chain: string; weight: number; paraId: number }>;
   token: string;
+  isCustom?: boolean;
+  customId?: string;
+  status?: "draft" | "pending" | "deployed";
 }
 
 const CHAIN_COLORS: Record<string, string> = {
@@ -91,23 +101,62 @@ export function BasketsListPage() {
   const [filter, setFilter] = useState<"all" | "active">("all");
   const [showShareModal, setShowShareModal] = useState(false);
   const [shareBasket, setShareBasket] = useState<BasketInfo | null>(null);
+  const [refreshKey, setRefreshKey] = useState(0);
 
   const handleShare = (basket: BasketInfo) => {
     setShareBasket(basket);
     setShowShareModal(true);
   };
 
+  const handleDeleteBasket = (customId: string) => {
+    if (deleteCustomBasket(customId)) {
+      setRefreshKey(k => k + 1);
+      // Reload custom baskets into state
+      const custom = getCustomBaskets().map(customBasketToPreview).map(c => ({
+        id: 999999n,
+        name: c.name,
+        symbol: c.symbol,
+        totalDeposited: 0n,
+        active: c.status === "deployed",
+        allocations: c.allocations,
+        token: "",
+        isCustom: true,
+        customId: c.id,
+        status: c.status,
+      }));
+      setBaskets(prev => prev.filter(b => !b.isCustom || custom.some(c => c.customId === b.customId)));
+    }
+  };
+
   // Always show all 4 baskets - only add more if they exist on-chain
   useEffect(() => {
+    // Load custom baskets from localStorage
+    const custom = getCustomBaskets().map(customBasketToPreview).map(c => ({
+      id: 999999n,
+      name: c.name,
+      symbol: c.symbol,
+      totalDeposited: 0n,
+      active: c.status === "deployed",
+      allocations: c.allocations,
+      token: "",
+      isCustom: true,
+      customId: c.id,
+      status: c.status,
+    }));
+    
+    // Build default + custom list
+    const base = FALLBACK_BASKETS.map(b => ({ ...b }));
+    const all = custom.length > 0 ? [...base, ...custom] : base;
+    setBaskets(all);
+    
     fetchAdditionalBaskets();
-  }, []);
+  }, [refreshKey]);
 
   async function fetchAdditionalBaskets() {
     try {
       const nextId = await getNextBasketId();
       const currentCount = FALLBACK_BASKETS.length;
       
-      // Only fetch if there are MORE baskets on-chain than our fallback
       if (Number(nextId) > currentCount) {
         const additionalBaskets: BasketInfo[] = [];
         
@@ -118,14 +167,15 @@ export function BasketsListPage() {
           }
         }
         
-        // Append additional baskets to our fallback list
         if (additionalBaskets.length > 0) {
-          setBaskets([...FALLBACK_BASKETS, ...additionalBaskets]);
+          setBaskets(prev => {
+            const custom = prev.filter(b => b.isCustom);
+            return [...FALLBACK_BASKETS, ...additionalBaskets, ...custom];
+          });
         }
       }
     } catch (error) {
       console.error("Failed to fetch additional baskets:", error);
-      // Keep fallback baskets on error
     }
   }
 
@@ -160,7 +210,7 @@ export function BasketsListPage() {
   }
 
   const filteredBaskets = filter === "active" 
-    ? baskets.filter(b => b.active) 
+    ? baskets.filter(b => b.active || (b.isCustom && b.status === "deployed")) 
     : baskets;
 
   const totalTVL = baskets.reduce((acc, b) => acc + b.totalDeposited, 0n);
@@ -200,7 +250,7 @@ export function BasketsListPage() {
                 Active
               </p>
               <p className="text-2xl font-bold text-white">
-                {baskets.filter(b => b.active).length}
+                {baskets.filter(b => b.active || (b.isCustom && b.status === "deployed")).length}
               </p>
             </div>
           </div>
@@ -256,21 +306,40 @@ export function BasketsListPage() {
 
 function BasketCard({ basket, onShare }: { basket: BasketInfo; onShare?: (basket: BasketInfo) => void }) {
   const formattedTVL = Number(formatUnits(basket.totalDeposited, APP_NATIVE_DECIMALS)).toLocaleString(undefined, { maximumFractionDigits: 1 });
+  const isCustom = basket.isCustom;
+  const isPending = isCustom && (basket.status === "pending" || basket.status === "draft");
   
   return (
-    <div className="group relative overflow-hidden rounded-3xl border border-white/10 bg-neutral-900 p-6 transition hover:border-white/20 hover:bg-neutral-800/50 hover:shadow-xl hover:shadow-emerald-500/10">
+    <div className={`group relative overflow-hidden rounded-3xl border bg-neutral-900 p-6 transition ${
+      isPending ? "border-yellow-500/20 hover:border-yellow-500/40" : "border-white/10 hover:border-white/20 hover:bg-neutral-800/50 hover:shadow-xl hover:shadow-emerald-500/10"
+    }`}>
       {/* Status Badge */}
       <div className="absolute right-4 top-4">
-        <span
-          className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
-            basket.active
-              ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
-              : "bg-neutral-500/20 text-neutral-400 border border-neutral-500/30"
-          }`}
-        >
-          {basket.active ? "Active" : "Inactive"}
-        </span>
+        {isCustom ? (
+          <span className="rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider bg-yellow-500/20 text-yellow-400 border border-yellow-500/30">
+            {basket.status === "pending" ? "Pending Approval" : basket.status === "deployed" ? "Active" : "Draft"}
+          </span>
+        ) : (
+          <span
+            className={`rounded-full px-3 py-1 text-xs font-bold uppercase tracking-wider ${
+              basket.active
+                ? "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+                : "bg-neutral-500/20 text-neutral-400 border border-neutral-500/30"
+            }`}
+          >
+            {basket.active ? "Active" : "Inactive"}
+          </span>
+        )}
       </div>
+
+      {/* Custom Basket Badge */}
+      {isCustom && (
+        <div className="absolute left-4 top-4">
+          <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-blue-500/20 text-blue-400 border border-blue-500/30">
+            Custom
+          </span>
+        </div>
+      )}
 
       {/* Header with Icon */}
       <div className="mb-6 flex items-start gap-4">
@@ -289,7 +358,7 @@ function BasketCard({ basket, onShare }: { basket: BasketInfo; onShare?: (basket
           Total Value Locked
         </p>
         <p className="text-3xl font-black text-white">
-          {formattedTVL}
+          {isCustom && basket.totalDeposited === 0n ? "—" : formattedTVL}
           <span className="text-lg font-medium text-neutral-400 ml-2">{APP_NATIVE_SYMBOL}</span>
         </p>
       </div>
@@ -325,29 +394,56 @@ function BasketCard({ basket, onShare }: { basket: BasketInfo; onShare?: (basket
 
       {/* Actions */}
       <div className="flex gap-3">
-        <Link
-          to={`/basket/${basket.id}`}
-          className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-center text-sm font-bold text-white transition hover:bg-white/10"
-        >
-          View Details
-        </Link>
-        {onShare && (
-          <button
-            onClick={() => onShare(basket)}
-            className="px-4 py-3 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-400 transition hover:bg-blue-500/20"
-            aria-label="Share"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-            </svg>
-          </button>
+        {isPending ? (
+          <>
+            <span className="flex-1 rounded-xl border border-yellow-500/20 bg-yellow-500/5 py-3 text-center text-sm font-bold text-yellow-400">
+              Pending Approval
+            </span>
+            {onShare && (
+              <button
+                onClick={() => onShare(basket)}
+                className="px-4 py-3 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-400 transition hover:bg-blue-500/20"
+                aria-label="Share"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </button>
+            )}
+            <button
+              disabled
+              className="flex-1 rounded-xl bg-neutral-700 py-3 text-center text-sm font-bold text-neutral-400 cursor-not-allowed opacity-50"
+            >
+              Invest
+            </button>
+          </>
+        ) : (
+          <>
+            <Link
+              to={`/basket/${basket.id}`}
+              className="flex-1 rounded-xl border border-white/10 bg-white/5 py-3 text-center text-sm font-bold text-white transition hover:bg-white/10"
+            >
+              View Details
+            </Link>
+            {onShare && (
+              <button
+                onClick={() => onShare(basket)}
+                className="px-4 py-3 rounded-xl border border-blue-500/20 bg-blue-500/10 text-blue-400 transition hover:bg-blue-500/20"
+                aria-label="Share"
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                </svg>
+              </button>
+            )}
+            <Link
+              to={`/basket/${basket.id}`}
+              className="flex-1 rounded-xl bg-emerald-500 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-600"
+            >
+              Invest
+            </Link>
+          </>
         )}
-        <Link
-          to={`/basket/${basket.id}`}
-          className="flex-1 rounded-xl bg-emerald-500 py-3 text-center text-sm font-bold text-white transition hover:bg-emerald-600"
-        >
-          Invest
-        </Link>
       </div>
     </div>
   );
